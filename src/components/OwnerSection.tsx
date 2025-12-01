@@ -82,7 +82,7 @@ export const OwnerSection = () => {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <button
-          className="flex items-center justify-center gap-2 border border-black/20 bg-white px-3 py-3 text-sm font-medium text-black transition-colors hover:border-black hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+          className="flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
           onClick={() => setShowMnemonic(!showMnemonic)}
           type="button"
         >
@@ -93,7 +93,7 @@ export const OwnerSection = () => {
           <span className="sm:hidden">Mnemonic</span>
         </button>
         <button
-          className="flex items-center justify-center gap-2 border border-black/20 bg-white px-3 py-3 text-sm font-medium text-black transition-colors hover:border-black hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+          className="flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
           onClick={handleRestoreClick}
           type="button"
         >
@@ -102,7 +102,7 @@ export const OwnerSection = () => {
           <span className="sm:hidden">Restore</span>
         </button>
         <button
-          className="flex items-center justify-center gap-2 border border-black/20 bg-white px-3 py-3 text-sm font-medium text-black transition-colors hover:border-black hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+          className="flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
           onClick={handleResetClick}
           type="button"
         >
@@ -122,7 +122,7 @@ export const OwnerSection = () => {
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <button
-              className="bg-[#F7931A] px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#F7931A]/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+              className="rounded-full bg-[#F7931A] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#F7931A]/90 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
               onClick={() => {
                 if (appOwner?.mnemonic) {
                   void navigator.clipboard.writeText(appOwner.mnemonic);
@@ -133,7 +133,7 @@ export const OwnerSection = () => {
               Copy
             </button>
             <button
-              className="border border-black/20 bg-white px-4 py-1.5 text-xs font-medium text-black transition-colors hover:border-black hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+              className="rounded-xl border border-black/10 bg-white px-5 py-2 text-xs font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
               onClick={handleExportDatabase}
               type="button"
             >

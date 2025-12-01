@@ -50,7 +50,7 @@ export const AddPlayerForm = () => {
           </span>
           <input
             autoComplete="off"
-            className="w-full border-b border-black/20 bg-transparent px-1 py-2.5 text-base text-black placeholder:text-black/30 transition-colors focus:border-[#F7931A] focus:outline-none"
+            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
             maxLength={100}
             placeholder="e.g. Katarína"
             required
@@ -63,7 +63,7 @@ export const AddPlayerForm = () => {
             Initial rating
           </span>
           <input
-            className="w-full border-b border-black/20 bg-transparent px-1 py-2.5 text-base text-black placeholder:text-black/30 transition-colors focus:border-[#F7931A] focus:outline-none"
+            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
             min="0"
             step="0.01"
             type="number"
@@ -77,7 +77,7 @@ export const AddPlayerForm = () => {
       )}
       <div className="flex justify-end pt-2">
         <button
-          className="bg-[#F7931A] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#F7931A]/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+          className="rounded-full bg-[#F7931A] px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#F7931A]/90 hover:shadow-lg active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
           type="submit"
         >
           Add player
