@@ -16,7 +16,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: false,
       pwaAssets: {
-        disabled: true,
+        disabled: false,
+        config: true,
       },
       manifest: {
         name: "Table Tennis League",
@@ -26,14 +27,6 @@ export default defineConfig({
         background_color: "#f4f4f5",
         display: "standalone",
         start_url: ".",
-        icons: [
-          {
-            src: "icons/icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "maskable any",
-          },
-        ],
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,wasm}"],
