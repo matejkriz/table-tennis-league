@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "npx tsc && vite build",
     "clean": "rimraf node_modules dist .vite .turbo dev-dist",
     "dev": "vite",
     "generate-pwa-assets": "pwa-assets-generator",
@@ -15,6 +15,7 @@
     "@evolu/common": "latest",
     "@evolu/react": "latest",
     "@evolu/react-web": "latest",
+    "@evolu/web": "^2.4.0",
     "@tabler/icons-react": "^3.35.0",
     "clsx": "^2.1.1",
     "react": "19.1.0",
