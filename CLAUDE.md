@@ -20,6 +20,13 @@ yarn preview          # Preview production build locally
 yarn lint             # Run ESLint on the codebase
 ```
 
+### Testing
+```bash
+yarn test             # Run tests in watch mode
+yarn test:ui          # Run tests with Vitest UI
+yarn test:coverage    # Run tests with coverage report
+```
+
 ### Utilities
 ```bash
 yarn clean                    # Remove node_modules, dist, and build artifacts
@@ -115,6 +122,28 @@ Notable optimizeDeps exclusions:
 
 These are excluded to avoid Vite's dependency pre-bundling which can cause issues with WebAssembly modules.
 
+### Testing Setup
+
+The project uses **Vitest** with **React Testing Library** for testing:
+
+- **Test framework**: Vitest (compatible with Vite configuration)
+- **Component testing**: React Testing Library
+- **IndexedDB mock**: `fake-indexeddb` polyfills IndexedDB for Evolu in tests
+- **Test files**: Located alongside source files with `.test.ts` or `.test.tsx` extension
+
+**Key testing considerations:**
+
+- **Evolu mocking**: Test files mock the Evolu client module before imports to prevent WebWorker initialization in jsdom
+- **Mock pattern**: Each test file includes `vi.mock("../evolu/client")` at the top with mocked hooks (`useEvolu`, `useQuery`, etc.)
+- **Test setup**: Global setup in `src/test/setup.ts` includes fake-indexeddb and @testing-library/jest-dom matchers
+
+**Coverage:**
+- Rating calculation logic (`useLeagueData.ts`): 11 tests covering K-factor, Elo formula, ranking, and edge cases
+- Critical components: `AddPlayerForm`, `MatchRecorder`, `CollapsibleSection`
+- Total: 61 tests across 4 test files
+
+Run tests in watch mode during development for instant feedback on changes.
+
 ## Development Guidelines
 
 ### Working with Evolu
@@ -131,6 +160,7 @@ These are excluded to avoid Vite's dependency pre-bundling which can cause issue
 - Export branded ID types (e.g., `export const FooId = Evolu.id("Foo")`)
 - Use TanStack Router's file-based routing for new pages
 - Follow existing component patterns for consistency (especially CollapsibleSection for grouping content)
+- Write tests for new business logic and critical components (place `.test.ts` files alongside source files)
 
 ### Styling Conventions
 
