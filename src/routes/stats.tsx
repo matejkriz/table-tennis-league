@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { CollapsibleSection } from "../components/CollapsibleSection";
 import { MatchHistory } from "../components/MatchHistory";
 import { RankingList } from "../components/RankingList";
 import { useLeagueData } from "../hooks/useLeagueData";
@@ -23,22 +24,22 @@ const StatsPage = () => {
       </header>
 
       <div className="space-y-6">
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-black/60">
-              Ranking
-            </h2>
-            <span className="text-xs font-mono text-black/40">STR</span>
-          </div>
+        <CollapsibleSection
+          storageKey="section-stats-ranking"
+          title="Ranking"
+          defaultOpen={true}
+          headerRight="STR"
+        >
           <RankingList ranking={ranking} />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Match history
-          </h2>
+        <CollapsibleSection
+          storageKey="section-stats-match-history"
+          title="Match history"
+          defaultOpen={true}
+        >
           <MatchHistory matches={matches} readonly />
-        </section>
+        </CollapsibleSection>
       </div>
     </div>
   );

@@ -10,6 +10,9 @@ export type PlayerId = typeof PlayerId.Type;
 export const MatchId = Evolu.id("Match");
 export type MatchId = typeof MatchId.Type;
 
+export const UiPreferenceId = Evolu.id("UiPreference");
+export type UiPreferenceId = typeof UiPreferenceId.Type;
+
 const Schema = {
   player: {
     id: PlayerId,
@@ -23,6 +26,12 @@ const Schema = {
     winnerId: PlayerId,
     playedAt: Evolu.DateIso,
     note: Evolu.nullOr(Evolu.NonEmptyTrimmedString1000),
+  },
+  // Underscore prefix = local-only, not synced across devices
+  _uiPreference: {
+    id: UiPreferenceId,
+    key: Evolu.NonEmptyTrimmedString100,
+    isOpen: Evolu.SqliteBoolean,
   },
 };
 
@@ -113,5 +122,18 @@ export const matchesQuery = evolu.createQuery((db) =>
 );
 
 export type MatchRow = typeof matchesQuery.Row;
+
+export const uiPreferencesQuery = evolu.createQuery((db) =>
+  db
+    .selectFrom("_uiPreference")
+    .select(["id", "key", "isOpen"])
+    .where("isDeleted", "is not", Evolu.sqliteTrue)
+    .where("key", "is not", null)
+    .$narrowType<{ key: Evolu.kysely.NotNull }>()
+    .where("isOpen", "is not", null)
+    .$narrowType<{ isOpen: Evolu.kysely.NotNull }>()
+);
+
+export type UiPreferenceRow = typeof uiPreferencesQuery.Row;
 
 export { EvoluProvider, useQuery };

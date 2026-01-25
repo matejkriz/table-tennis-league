@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 
+import { CollapsibleSection } from "../components/CollapsibleSection";
 import { MatchHistory } from "../components/MatchHistory";
 import { MatchRecorder } from "../components/MatchRecorder";
 import { RankingList } from "../components/RankingList";
@@ -27,29 +28,30 @@ const MatchPage = () => {
       </header>
 
       <div className="space-y-6">
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Record match
-          </h2>
+        <CollapsibleSection
+          storageKey="section-match-record-match"
+          title="Record match"
+          defaultOpen={true}
+        >
           <MatchRecorder currentRatings={ratingMap} players={players} />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Match history
-          </h2>
+        <CollapsibleSection
+          storageKey="section-match-match-history"
+          title="Match history"
+          defaultOpen={false}
+        >
           <MatchHistory matches={matches} />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-black/60">
-              Ranking
-            </h2>
-            <span className="text-xs font-mono text-black/40">STR</span>
-          </div>
+        <CollapsibleSection
+          storageKey="section-match-ranking"
+          title="Ranking"
+          defaultOpen={false}
+          headerRight="STR"
+        >
           <RankingList ranking={ranking} />
-        </section>
+        </CollapsibleSection>
       </div>
     </div>
   );

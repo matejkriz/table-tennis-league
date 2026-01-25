@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { AddPlayerForm } from "../components/AddPlayerForm";
+import { CollapsibleSection } from "../components/CollapsibleSection";
 import { MatchHistory } from "../components/MatchHistory";
 import { MatchRecorder } from "../components/MatchRecorder";
 import { OwnerSection } from "../components/OwnerSection";
@@ -36,43 +37,46 @@ const LeagueDashboard = () => {
       </header>
 
       <div className="space-y-6">
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Add player
-          </h2>
+        <CollapsibleSection
+          storageKey="section-home-add-player"
+          title="Add player"
+          defaultOpen={false}
+        >
           <AddPlayerForm />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Record match
-          </h2>
+        <CollapsibleSection
+          storageKey="section-home-record-match"
+          title="Record match"
+          defaultOpen={true}
+        >
           <MatchRecorder currentRatings={ratingMap} players={players} />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-black/60">
-              Ranking
-            </h2>
-            <span className="text-xs font-mono text-black/40">STR</span>
-          </div>
+        <CollapsibleSection
+          storageKey="section-home-ranking"
+          title="Ranking"
+          defaultOpen={true}
+          headerRight="STR"
+        >
           <RankingList ranking={ranking} />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Match history
-          </h2>
+        <CollapsibleSection
+          storageKey="section-home-match-history"
+          title="Match history"
+          defaultOpen={false}
+        >
           <MatchHistory matches={matches} />
-        </section>
+        </CollapsibleSection>
 
-        <section className="rounded-lg border border-black/10 bg-white p-5 sm:p-6">
-          <h2 className="mb-5 text-xs font-medium uppercase tracking-wider text-black/60">
-            Account & sync
-          </h2>
+        <CollapsibleSection
+          storageKey="section-home-account"
+          title="Account & sync"
+          defaultOpen={false}
+        >
           <OwnerSection />
-        </section>
+        </CollapsibleSection>
       </div>
     </div>
   );
