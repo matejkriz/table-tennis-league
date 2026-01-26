@@ -1,61 +1,61 @@
 {
-  "hash": "797e819c",
+  "hash": "e8767c2e",
   "configHash": "701bdb72",
-  "lockfileHash": "c2e0da9c",
-  "browserHash": "dfe524b4",
+  "lockfileHash": "0faa68c5",
+  "browserHash": "bfecef03",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "ce78110c",
+      "fileHash": "68a02abb",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "062f8ef1",
+      "fileHash": "2cf2d1dc",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "87ad342f",
+      "fileHash": "38136eb8",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "fd30d4f0",
+      "fileHash": "c2ed27a3",
       "needsInterop": true
     },
     "@evolu/common": {
       "src": "../../node_modules/@evolu/common/dist/src/index.js",
       "file": "@evolu_common.js",
-      "fileHash": "726124fc",
+      "fileHash": "24868cc2",
       "needsInterop": false
     },
     "@evolu/react": {
       "src": "../../node_modules/@evolu/react/dist/index.js",
       "file": "@evolu_react.js",
-      "fileHash": "10a87ed5",
+      "fileHash": "acb4163c",
       "needsInterop": false
     },
     "@tabler/icons-react": {
       "src": "../../node_modules/@tabler/icons-react/dist/esm/tabler-icons-react.mjs",
       "file": "@tabler_icons-react.js",
-      "fileHash": "dfee9f8b",
+      "fileHash": "cdad3565",
       "needsInterop": false
     },
     "@tanstack/react-router": {
       "src": "../../node_modules/@tanstack/react-router/dist/esm/index.dev.js",
       "file": "@tanstack_react-router.js",
-      "fileHash": "b1854e64",
+      "fileHash": "7e0a375d",
       "needsInterop": false
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "dd3682ee",
+      "fileHash": "120bd40f",
       "needsInterop": true
     }
   },
