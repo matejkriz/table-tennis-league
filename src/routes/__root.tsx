@@ -12,8 +12,8 @@ export const Route = createRootRoute({
           <div className="p-6 text-center text-black/40">Loading…</div>
         }
       >
-        <Outlet />
         <Navigation />
+        <Outlet />
       </Suspense>
     </EvoluProvider>
   ),

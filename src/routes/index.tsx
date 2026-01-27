@@ -20,7 +20,7 @@ const MatchPage = () => {
   }, [ranking]);
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-20 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-20 sm:px-6 sm:py-8 md:pb-8 md:pt-20">
       <header className="mb-10">
         <h1 className="text-3xl font-light text-black sm:text-4xl">
           Record Match
