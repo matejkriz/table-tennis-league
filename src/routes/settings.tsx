@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { AddPlayerForm } from "../components/AddPlayerForm";
 import { CollapsibleSection } from "../components/CollapsibleSection";
-import { MatchHistory } from "../components/MatchHistory";
-import { RankingList } from "../components/RankingList";
+import { OwnerSection } from "../components/OwnerSection";
 import { useLeagueData } from "../hooks/useLeagueData";
 
-const StatsPage = () => {
-  const { players, ranking, matches } = useLeagueData();
+const SettingsPage = () => {
+  const { players, matches } = useLeagueData();
 
   const matchCount = matches.length;
 
@@ -25,26 +25,25 @@ const StatsPage = () => {
 
       <div className="space-y-6">
         <CollapsibleSection
-          storageKey="section-stats-ranking"
-          title="Ranking"
+          storageKey="section-settings-account"
+          title="Account & sync"
           defaultOpen={true}
-          headerRight="STR"
         >
-          <RankingList ranking={ranking} />
+          <OwnerSection />
         </CollapsibleSection>
 
         <CollapsibleSection
-          storageKey="section-stats-match-history"
-          title="Match history"
-          defaultOpen={true}
+          storageKey="section-settings-add-player"
+          title="Add player"
+          defaultOpen={false}
         >
-          <MatchHistory matches={matches} readonly />
+          <AddPlayerForm />
         </CollapsibleSection>
       </div>
     </div>
   );
 };
 
-export const Route = createFileRoute("/stats")({
-  component: StatsPage,
+export const Route = createFileRoute("/settings")({
+  component: SettingsPage,
 });
