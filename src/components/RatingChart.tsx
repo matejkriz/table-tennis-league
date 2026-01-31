@@ -125,7 +125,7 @@ export const RatingChart = ({
       });
     });
 
-    // Build data points by processing matches in reverse (from current to past)
+    // Build continuous daily data points
     const dataPoints: ChartDataPoint[] = [];
 
     // Get current ratings for selected players
@@ -136,6 +136,20 @@ export const RatingChart = ({
     const isPlayerAWinner = winnerId === playerAId;
     const isPlayerBWinner = winnerId === playerBId;
 
+    // Create a map of matches by date for quick lookup
+    const matchesByDate = new Map<string, typeof allMatches>();
+    allMatches.forEach((match) => {
+      const date = match.playedAt.split('T')[0];
+      if (!matchesByDate.has(date)) {
+        matchesByDate.set(date, []);
+      }
+      matchesByDate.get(date)!.push(match);
+    });
+
+    // Generate continuous daily data points from cutoff date to now
+    const startDate = new Date(cutoffDate);
+    const endDate = new Date(now);
+    
     // Add projection point (only if both players are selected)
     if (bothPlayersSelected && currentA && currentB) {
       dataPoints.push({
@@ -152,107 +166,64 @@ export const RatingChart = ({
       });
     }
 
-    // Add current point
-    const currentPoint: ChartDataPoint = {
-      date: now.toISOString(),
-      formattedDate: "Nyní",
-    };
-    if (playerA && currentA) {
-      currentPoint[playerA.name] = currentA.rating;
-      if (bothPlayersSelected) {
-        currentPoint[`${playerA.name} (proj)`] = currentA.rating;
-      }
-    }
-    if (playerB && currentB) {
-      currentPoint[playerB.name] = currentB.rating;
-      if (bothPlayersSelected) {
-        currentPoint[`${playerB.name} (proj)`] = currentB.rating;
-      }
-    }
-    dataPoints.push(currentPoint);
-
-    // Process all matches in reverse order (from newest to oldest)
-    // This way we can "revert" the ratings to get historical values
-    const reversedMatches = [...allMatches].reverse();
-    
-    reversedMatches.forEach((match) => {
-      const matchPlayerA = playersById.get(match.playerAId);
-      const matchPlayerB = playersById.get(match.playerBId);
-      if (!matchPlayerA || !matchPlayerB) return;
-
-      const stateA = ratingState.get(match.playerAId);
-      const stateB = ratingState.get(match.playerBId);
-      if (!stateA || !stateB) return;
-
-      // Calculate what the ratings were before this match
-      const ratingA = stateA.rating;
-      const ratingB = stateB.rating;
-
-      const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-      const actualA = match.winnerId === match.playerAId ? 1 : 0;
-      const deltaA = K_FACTOR * (actualA - expectedA);
-      const deltaB = -deltaA;
-
-      // Revert the ratings
-      stateA.rating = ratingA - deltaA;
-      stateB.rating = ratingB - deltaB;
-
-      // Check if this match involves any of the selected players
-      const involvesPlayerA = playerA && (match.playerAId === playerA.id || match.playerBId === playerA.id);
-      const involvesPlayerB = playerB && (match.playerAId === playerB.id || match.playerBId === playerB.id);
+    // Process each day from end date back to start date
+    for (let currentDate = new Date(endDate); currentDate >= startDate; currentDate.setDate(currentDate.getDate() - 1)) {
+      const dateIso = currentDate.toISOString().split('T')[0];
+      const dayMatches = matchesByDate.get(dateIso) || [];
       
-      // Only add data point if at least one selected player was involved
-      if (involvesPlayerA || involvesPlayerB) {
-        const point: ChartDataPoint = {
-          date: match.playedAt,
-          formattedDate: formatDate(match.playedAt),
-        };
+      // Process all matches for this day in reverse order (from newest to oldest)
+      const reversedDayMatches = [...dayMatches].reverse();
+      
+      reversedDayMatches.forEach((match) => {
+        const matchPlayerA = playersById.get(match.playerAId);
+        const matchPlayerB = playersById.get(match.playerBId);
+        if (!matchPlayerA || !matchPlayerB) return;
 
-        if (playerA) {
-          const pointA = ratingState.get(playerA.id)?.rating ?? playerA.initialRating;
-          point[playerA.name] = pointA;
-          if (bothPlayersSelected) {
-            point[`${playerA.name} (proj)`] = null;
-          }
-        }
-        if (playerB) {
-          const pointB = ratingState.get(playerB.id)?.rating ?? playerB.initialRating;
-          point[playerB.name] = pointB;
-          if (bothPlayersSelected) {
-            point[`${playerB.name} (proj)`] = null;
-          }
-        }
+        const stateA = ratingState.get(match.playerAId);
+        const stateB = ratingState.get(match.playerBId);
+        if (!stateA || !stateB) return;
 
-        dataPoints.push(point);
-      }
-    });
+        // Calculate what the ratings were before this match
+        const ratingA = stateA.rating;
+        const ratingB = stateB.rating;
 
-    // Reverse to get chronological order (oldest to newest)
-    dataPoints.reverse();
+        const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+        const actualA = match.winnerId === match.playerAId ? 1 : 0;
+        const deltaA = K_FACTOR * (actualA - expectedA);
+        const deltaB = -deltaA;
 
-    // If no historical data, add starting point
-    if (dataPoints.length <= (bothPlayersSelected ? 2 : 1)) {
-      const startDate = new Date(cutoffDate);
-      const startPoint: ChartDataPoint = {
-        date: startDate.toISOString(),
-        formattedDate: formatDate(startDate.toISOString()),
+        // Revert the ratings
+        stateA.rating = ratingA - deltaA;
+        stateB.rating = ratingB - deltaB;
+      });
+
+      // Add data point for this day (showing ratings after all matches of this day)
+      const isToday = currentDate.toDateString() === now.toDateString();
+      const point: ChartDataPoint = {
+        date: currentDate.toISOString(),
+        formattedDate: isToday ? "Nyní" : formatDate(currentDate.toISOString()),
       };
-      
+
       if (playerA) {
-        startPoint[playerA.name] = playerA.initialRating;
+        const ratingA = ratingState.get(playerA.id)?.rating ?? playerA.initialRating;
+        point[playerA.name] = ratingA;
         if (bothPlayersSelected) {
-          startPoint[`${playerA.name} (proj)`] = null;
+          point[`${playerA.name} (proj)`] = ratingA;
         }
       }
       if (playerB) {
-        startPoint[playerB.name] = playerB.initialRating;
+        const ratingB = ratingState.get(playerB.id)?.rating ?? playerB.initialRating;
+        point[playerB.name] = ratingB;
         if (bothPlayersSelected) {
-          startPoint[`${playerB.name} (proj)`] = null;
+          point[`${playerB.name} (proj)`] = ratingB;
         }
       }
-      
-      dataPoints.unshift(startPoint);
+
+      dataPoints.push(point);
     }
+
+    // Reverse to get chronological order (oldest to newest)
+    dataPoints.reverse();
 
     return {
       data: dataPoints,
