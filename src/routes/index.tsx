@@ -33,7 +33,7 @@ const MatchPage = () => {
           title="Record match"
           defaultOpen={true}
         >
-          <MatchRecorder currentRatings={ratingMap} players={players} />
+          <MatchRecorder currentRatings={ratingMap} players={players} matches={matches.map(m => m.match)} />
         </CollapsibleSection>
 
         <CollapsibleSection

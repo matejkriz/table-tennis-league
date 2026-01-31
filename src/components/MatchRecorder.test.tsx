@@ -8,7 +8,7 @@ vi.mock("../evolu/client", () => ({
 
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { PlayerId } from "../evolu/client";
+import type { PlayerId, MatchRow } from "../evolu/client";
 import { useEvolu } from "../evolu/client";
 import { MatchRecorder } from "./MatchRecorder";
 import { createMockPlayer } from "../test/helpers";
@@ -40,6 +40,8 @@ describe("MatchRecorder", () => {
     ["player3" as PlayerId, 850],
   ]);
 
+  const mockMatches: MatchRow[] = [];
+
   const mockInsert = vi.fn<
     (table: string, data: unknown, options?: { onComplete?: () => void }) => InsertResult
   >(() => ({ ok: true }));
@@ -53,7 +55,7 @@ describe("MatchRecorder", () => {
 
   it("should render player selects with all players", () => {
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     // Check Player A and Player B selects exist
@@ -68,7 +70,7 @@ describe("MatchRecorder", () => {
 
   it("should show message when fewer than 2 players", () => {
     render(
-      <MatchRecorder players={[mockPlayers[0]]} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={[mockPlayers[0]]} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     expect(
@@ -79,7 +81,7 @@ describe("MatchRecorder", () => {
 
   it("should initialize with first two players selected", () => {
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const playerSelects = screen.getAllByRole("combobox");
@@ -89,7 +91,7 @@ describe("MatchRecorder", () => {
 
   it("should display winner selection buttons for selected players", () => {
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const winnerButtons = screen.getAllByRole("button", { name: /Alice|Bob/i });
@@ -99,7 +101,7 @@ describe("MatchRecorder", () => {
   it("should highlight selected winner", async () => {
     const user = userEvent.setup();
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const aliceButton = screen.getAllByRole("button").find((button) =>
@@ -112,21 +114,21 @@ describe("MatchRecorder", () => {
     expect(aliceButton).toBeInTheDocument();
     expect(bobButton).toBeInTheDocument();
 
-    // Alice should be selected by default (first player)
-    expect(aliceButton?.className).toContain("border-[#F7931A]");
+    // Alice (Player A) should be selected by default - orange color (inline style)
+    expect(aliceButton).toHaveStyle({ borderColor: "#F7931A" });
 
     // Click Bob to select as winner
     if (bobButton) await user.click(bobButton);
 
-    // Bob should now be highlighted
+    // Bob (Player B) should now be highlighted - blue color (inline style)
     await waitFor(() => {
-      expect(bobButton?.className).toContain("border-[#F7931A]");
+      expect(bobButton).toHaveStyle({ borderColor: "#3B82F6" });
     });
   });
 
   it("should show projected rating changes", () => {
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     expect(screen.getByText("Projected change")).toBeInTheDocument();
@@ -138,7 +140,7 @@ describe("MatchRecorder", () => {
   it("should submit match with correct data", async () => {
     const user = userEvent.setup();
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const submitButton = screen.getByRole("button", { name: /record match/i });
@@ -159,7 +161,7 @@ describe("MatchRecorder", () => {
   it("should prevent selecting the same player twice", async () => {
     const user = userEvent.setup();
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const playerASelect = screen.getByLabelText(/player a/i);
@@ -181,7 +183,7 @@ describe("MatchRecorder", () => {
   it("should include note when provided", async () => {
     const user = userEvent.setup();
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const noteInput = screen.getByPlaceholderText(/score, highlights/i);
@@ -211,7 +213,7 @@ describe("MatchRecorder", () => {
     );
 
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const noteInput = screen.getByPlaceholderText(/score, highlights/i);
@@ -233,7 +235,7 @@ describe("MatchRecorder", () => {
   it("should change player B when player A is changed to same value", async () => {
     const user = userEvent.setup();
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const playerSelects = screen.getAllByRole("combobox");
@@ -259,7 +261,7 @@ describe("MatchRecorder", () => {
     } as { ok: false; error: { type: string } });
 
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const submitButton = screen.getByRole("button", { name: /record match/i });
@@ -277,7 +279,7 @@ describe("MatchRecorder", () => {
     ]);
 
     render(
-      <MatchRecorder players={mockPlayers.slice(0, 2)} currentRatings={equalRatingsMap} />
+      <MatchRecorder players={mockPlayers.slice(0, 2)} currentRatings={equalRatingsMap} matches={mockMatches} />
     );
 
     // For equal ratings, expected score is 0.5 for each
@@ -289,7 +291,7 @@ describe("MatchRecorder", () => {
 
   it("should show winner label on selected winner button", () => {
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     // First player (Alice) is default winner
@@ -299,7 +301,7 @@ describe("MatchRecorder", () => {
 
   it("should allow textarea input up to 1000 characters", () => {
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} />
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const noteInput = screen.getByPlaceholderText(/score, highlights/i);

@@ -1,20 +1,25 @@
 import * as Evolu from "@evolu/common";
-import { IconTrophy } from "@tabler/icons-react";
+import { IconMoodSad, IconTrophy } from "@tabler/icons-react";
 import { FormEvent, useMemo, useState } from "react";
 
+import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
-import type { PlayerId } from "../evolu/client";
 import { K_FACTOR } from "../hooks/useLeagueData";
-import type { PlayerRow } from "../evolu/client";
+import { RatingChart } from "./RatingChart";
+
+const PLAYER_A_COLOR = "#F7931A";
+const PLAYER_B_COLOR = "#3B82F6";
 
 interface MatchRecorderProps {
   readonly players: ReadonlyArray<PlayerRow>;
   readonly currentRatings: ReadonlyMap<PlayerId, number>;
+  readonly matches: ReadonlyArray<MatchRow>;
 }
 
 export const MatchRecorder = ({
   players,
   currentRatings,
+  matches,
 }: MatchRecorderProps) => {
   const { insert } = useEvolu();
   const [playerAId, setPlayerAId] = useState<PlayerId | "">(
@@ -23,9 +28,7 @@ export const MatchRecorder = ({
   const [playerBId, setPlayerBId] = useState<PlayerId | "">(
     players[1]?.id ?? "",
   );
-  const [winnerId, setWinnerId] = useState<PlayerId | "">(
-    players[0]?.id ?? "",
-  );
+  const [winnerId, setWinnerId] = useState<PlayerId | "">(players[0]?.id ?? "");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -131,7 +134,8 @@ export const MatchRecorder = ({
               const value = event.target.value as PlayerId | "";
               setPlayerAId(value);
               if (value && value === playerBId) {
-                const alternative = players.find((p) => p.id !== value)?.id ?? "";
+                const alternative =
+                  players.find((p) => p.id !== value)?.id ?? "";
                 setPlayerBId(alternative);
               }
               if (winnerId && winnerId !== value && winnerId !== playerBId) {
@@ -158,7 +162,8 @@ export const MatchRecorder = ({
               const value = event.target.value as PlayerId | "";
               setPlayerBId(value);
               if (value && value === playerAId) {
-                const alternative = players.find((p) => p.id !== value)?.id ?? "";
+                const alternative =
+                  players.find((p) => p.id !== value)?.id ?? "";
                 setPlayerAId(alternative);
               }
               if (winnerId && winnerId !== value && winnerId !== playerAId) {
@@ -176,64 +181,112 @@ export const MatchRecorder = ({
         </label>
       </div>
 
-      <div className="border-t border-black/10 pt-5">
-        <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
-          Winner
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          {[playerAId, playerBId]
-            .map((id) => (id ? playersById.get(id) : undefined))
-            .filter(Boolean)
-            .map((player) => {
-              const isSelected = winnerId === player!.id;
-              return (
-                <button
-                  key={player!.id}
-                  type="button"
-                  onClick={() => setWinnerId(player!.id)}
-                  className={`
-                    relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-center transition-all
-                    ${
-                      isSelected
-                        ? "border-[#F7931A] bg-[#F7931A]/10 shadow-lg shadow-[#F7931A]/20"
-                        : "border-black/10 bg-white hover:border-black/20 hover:bg-black/5"
-                    }
-                  `}
-                >
-                  <div
-                    className={`
-                      flex h-10 w-10 items-center justify-center rounded-full transition-all
-                      ${
-                        isSelected
-                          ? "bg-[#F7931A] text-white"
-                          : "bg-black/5 text-black/30"
-                      }
-                    `}
-                  >
-                    <IconTrophy size={22} stroke={2} />
-                  </div>
-                  <span
-                    className={`
-                      text-lg transition-all
-                      ${
-                        isSelected
-                          ? "font-bold text-[#F7931A]"
-                          : "font-medium text-black/70"
-                      }
-                    `}
-                  >
-                    {player!.name}
-                  </span>
-                  {isSelected && (
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#F7931A]">
-                      Winner
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+      {(playerAId || playerBId) && (
+        <div className="border-t border-black/10 pt-5">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
+            Rating history (90 days)
+          </p>
+          <RatingChart
+            matches={matches}
+            players={players}
+            playerAId={playerAId}
+            playerBId={playerBId}
+            currentRatings={currentRatings}
+            projectedDeltaA={preview?.deltaA ?? 0}
+            projectedDeltaB={preview?.deltaB ?? 0}
+            winnerId={winnerId}
+          />
         </div>
-      </div>
+      )}
+
+      {playerAId && playerBId && (
+        <div className="border-t border-black/10 pt-5">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
+            Winner
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { id: playerAId, color: PLAYER_A_COLOR },
+              { id: playerBId, color: PLAYER_B_COLOR },
+            ]
+              .map((item) =>
+                item.id
+                  ? { player: playersById.get(item.id), color: item.color }
+                  : undefined,
+              )
+              .filter(Boolean)
+              .map((item) => {
+                const player = item!.player!;
+                const color = item!.color;
+                const isSelected = winnerId === player.id;
+                const isLoser = winnerId !== "" && winnerId !== player.id;
+
+                // Inline styles for dynamic colors
+                const selectedStyles = isSelected
+                  ? {
+                      borderColor: color,
+                      backgroundColor: `${color}1A`, // 10% opacity in hex
+                      boxShadow: `0 10px 15px -3px ${color}33, 0 4px 6px -4px ${color}33`,
+                    }
+                  : {};
+
+                const iconStyles = isSelected
+                  ? { backgroundColor: color, color: "white" }
+                  : isLoser
+                    ? { backgroundColor: "#F3F4F6", color: "#9CA3AF" }
+                    : {};
+
+                return (
+                  <button
+                    key={player.id}
+                    type="button"
+                    onClick={() => setWinnerId(player.id)}
+                    className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-center transition-all ${
+                      !isSelected
+                        ? "border-black/10 bg-white hover:border-black/20 hover:bg-black/5"
+                        : ""
+                    }`}
+                    style={selectedStyles}
+                  >
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-full transition-all"
+                      style={iconStyles}
+                    >
+                      {isSelected ? (
+                        <IconTrophy size={22} stroke={2} />
+                      ) : isLoser ? (
+                        <IconMoodSad size={22} stroke={2} />
+                      ) : (
+                        <IconTrophy size={22} stroke={2} />
+                      )}
+                    </div>
+                    <span
+                      className={`text-lg transition-all ${
+                        isSelected ? "font-bold" : "font-medium text-black/70"
+                      }`}
+                      style={isSelected ? { color } : {}}
+                    >
+                      {player.name}
+                    </span>
+                    {isSelected && (
+                      <span
+                        className="text-xs font-semibold uppercase tracking-wider"
+                        style={{ color }}
+                      >
+                        Winner
+                      </span>
+                    )}
+                    {isLoser && (
+                      <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        Loser
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       <label className="block">
         <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
@@ -249,48 +302,19 @@ export const MatchRecorder = ({
         />
       </label>
 
-      {preview && playerAId && playerBId && (
-        <div className="rounded border border-black/10 bg-black/5 p-4 text-sm">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-black/60">
-            Projected change
-          </p>
-          <div className="space-y-2 font-mono text-xs text-black/80">
-            <p>
-              {playersById.get(playerAId as PlayerId)?.name ?? "Player A"}:{" "}
-              <span className={preview.deltaA > 0 ? "text-[#F7931A]" : ""}>
-                {formatDelta(preview.deltaA)}
-              </span>{" "}
-              ({preview.ratingA.toFixed(1)} → {(preview.ratingA + preview.deltaA).toFixed(1)})
-            </p>
-            <p>
-              {playersById.get(playerBId as PlayerId)?.name ?? "Player B"}:{" "}
-              <span className={preview.deltaB > 0 ? "text-[#F7931A]" : ""}>
-                {formatDelta(preview.deltaB)}
-              </span>{" "}
-              ({preview.ratingB.toFixed(1)} → {(preview.ratingB + preview.deltaB).toFixed(1)})
-            </p>
-          </div>
+      {error && <p className="text-sm text-black/60">{error}</p>}
+
+      {playerAId && playerBId && (
+        <div className="flex justify-end pt-2">
+          <button
+            className="rounded-full bg-[#F7931A] px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#F7931A]/90 hover:shadow-lg active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
+            type="submit"
+          >
+            Record match
+          </button>
         </div>
       )}
-
-      {error && (
-        <p className="text-sm text-black/60">{error}</p>
-      )}
-
-      <div className="flex justify-end pt-2">
-        <button
-          className="rounded-full bg-[#F7931A] px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#F7931A]/90 hover:shadow-lg active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
-          type="submit"
-        >
-          Record match
-        </button>
-      </div>
     </form>
   );
 };
 
-const formatDelta = (delta: number): string => {
-  if (Number.isNaN(delta)) return "+0.0";
-  const sign = delta >= 0 ? "+" : "";
-  return `${sign}${delta.toFixed(1)}`;
-};
