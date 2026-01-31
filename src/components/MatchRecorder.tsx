@@ -288,19 +288,21 @@ export const MatchRecorder = ({
         </div>
       )}
 
-      <label className="block">
-        <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-          Optional note
-        </span>
-        <textarea
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-          maxLength={1000}
-          placeholder="Score, highlights, etc."
-          rows={3}
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-        />
-      </label>
+      {playerAId && playerBId && (
+        <label className="block">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+            Optional note
+          </span>
+          <textarea
+            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+            maxLength={1000}
+            placeholder="Score, highlights, etc."
+            rows={3}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+          />
+        </label>
+      )}
 
       {error && <p className="text-sm text-black/60">{error}</p>}
 
