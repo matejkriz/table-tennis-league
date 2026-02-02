@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 
 // Mock evolu/client to avoid creating actual Evolu instance
@@ -13,8 +13,9 @@ vi.mock("../evolu/client", () => ({
 }));
 
 // Mock recharts to avoid rendering issues in tests
+const mockLineChart = vi.fn();
 vi.mock("recharts", () => ({
-  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
+  LineChart: mockLineChart,
   Line: () => <div data-testid="line" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
@@ -47,6 +48,13 @@ describe("RatingChart", () => {
   ]);
 
   const mockMatches: MatchRow[] = [];
+
+  // Reset mock before each test
+  beforeEach(() => {
+    mockLineChart.mockImplementation(({ children }: { children: React.ReactNode }) => (
+      <div data-testid="line-chart">{children}</div>
+    ));
+  });
 
   it("should render nothing when no players are selected", () => {
     const { container } = render(
@@ -283,7 +291,16 @@ describe("RatingChart", () => {
   });
 
   it("should correctly calculate projection when player A wins", () => {
-    const { getByTestId } = render(
+    // Mock LineChart to capture the data prop
+    let capturedData: any[] = [];
+    mockLineChart.mockImplementation(
+      ({ data, children }: { data: any[]; children: React.ReactNode }) => {
+        capturedData = data;
+        return <div data-testid="line-chart">{children}</div>;
+      }
+    );
+
+    render(
       <RatingChart
         matches={mockMatches}
         players={mockPlayers}
@@ -296,11 +313,29 @@ describe("RatingChart", () => {
       />
     );
 
-    expect(getByTestId("line-chart")).toBeInTheDocument();
+    // Find the projection data point (last point in array)
+    const projectionPoint = capturedData[capturedData.length - 1];
+    expect(projectionPoint).toBeDefined();
+    expect(projectionPoint.formattedDate).toBe("Projection");
+    
+    // Verify projection calculation: currentRating + delta
+    // Player A (winner): 1008 + 8 = 1016
+    // Player B (loser): 992 + (-8) = 984
+    expect(projectionPoint["Alice (proj)"]).toBe(1016);
+    expect(projectionPoint["Bob (proj)"]).toBe(984);
   });
 
   it("should correctly calculate projection when player B wins", () => {
-    const { getByTestId } = render(
+    // Mock LineChart to capture the data prop
+    let capturedData: any[] = [];
+    mockLineChart.mockImplementation(
+      ({ data, children }: { data: any[]; children: React.ReactNode }) => {
+        capturedData = data;
+        return <div data-testid="line-chart">{children}</div>;
+      }
+    );
+
+    render(
       <RatingChart
         matches={mockMatches}
         players={mockPlayers}
@@ -313,7 +348,49 @@ describe("RatingChart", () => {
       />
     );
 
-    expect(getByTestId("line-chart")).toBeInTheDocument();
+    // Find the projection data point (last point in array)
+    const projectionPoint = capturedData[capturedData.length - 1];
+    expect(projectionPoint).toBeDefined();
+    expect(projectionPoint.formattedDate).toBe("Projection");
+    
+    // Verify projection calculation: currentRating + delta
+    // Player A (loser): 1008 + (-8) = 1000
+    // Player B (winner): 992 + 8 = 1000
+    expect(projectionPoint["Alice (proj)"]).toBe(1000);
+    expect(projectionPoint["Bob (proj)"]).toBe(1000);
+  });
+
+  it("should handle underdog wins with larger rating deltas correctly", () => {
+    // Mock LineChart to capture the data prop
+    let capturedData: any[] = [];
+    mockLineChart.mockImplementation(
+      ({ data, children }: { data: any[]; children: React.ReactNode }) => {
+        capturedData = data;
+        return <div data-testid="line-chart">{children}</div>;
+      }
+    );
+
+    // Scenario: Player B (lower rated) beats Player A (higher rated)
+    // This should result in larger delta for underdog
+    render(
+      <RatingChart
+        matches={mockMatches}
+        players={mockPlayers}
+        playerAId={"player1" as PlayerId}
+        playerBId={"player2" as PlayerId}
+        currentRatings={currentRatings}
+        projectedDeltaA={-12.5}  // Higher rated player loses more points
+        projectedDeltaB={12.5}   // Lower rated player gains more points
+        winnerId={"player2" as PlayerId}
+      />
+    );
+
+    const projectionPoint = capturedData[capturedData.length - 1];
+    expect(projectionPoint).toBeDefined();
+    
+    // Verify the deltas are applied correctly (not using Math.abs which would break this)
+    expect(projectionPoint["Alice (proj)"]).toBeCloseTo(1008 - 12.5, 1);
+    expect(projectionPoint["Bob (proj)"]).toBeCloseTo(992 + 12.5, 1);
   });
 
   it("should use current ratings from props, not initial ratings", () => {
