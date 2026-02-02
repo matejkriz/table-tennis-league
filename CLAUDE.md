@@ -81,9 +81,22 @@ Uses **TanStack Router** with file-based routing:
 Component patterns used throughout:
 
 - **CollapsibleSection**: Reusable collapsible container that persists open/closed state in Evolu's `_uiPreference` table using the `useCollapsibleState` hook
+- **RatingChart**: Interactive rating history visualization using `recharts` library
+  - Displays player rating trends over the last 90 days
+  - Shows projected rating changes for upcoming match outcomes
+  - Uses event-based data points (only creates points at match dates) for performance
+  - Color-coded: Player A (orange `#F7931A`), Player B (blue `#3B82F6`)
+  - Dashed lines indicate projections, solid lines show historical ratings
+  - Located in `src/components/RatingChart.tsx`
+- **MatchRecorder**: Match recording form with winner selection and rating preview
+  - Integrates RatingChart in a collapsible section
+  - Color-coordinated UI (Player A = orange, Player B = blue)
+  - Shows "Winner" badge with trophy icon, "Loser" badge with sad face icon
+  - Displays projected rating changes before match submission
 - **Form handling**: Forms use Evolu's type validation with `formatTypeError()` to display user-friendly error messages
 - **Styling**: Tailwind CSS utility classes with custom theme color `#F7931A` (orange) as the primary accent
 - **Icons**: `@tabler/icons-react` for all icons
+- **Charts**: `recharts` for data visualization (LineChart, responsive containers, tooltips)
 
 ### State Management
 
@@ -157,6 +170,12 @@ Notable optimizeDeps exclusions:
 
 These are excluded to avoid Vite's dependency pre-bundling which can cause issues with WebAssembly modules.
 
+**Chart Library**:
+- `recharts` (v3.7.0+): Used for rating history visualization
+  - Provides LineChart, XAxis, YAxis, Tooltip, Legend, and ResponsiveContainer components
+  - Automatically optimized by Vite for production builds
+  - Mock in tests using `vi.mock("recharts")` to avoid rendering issues in jsdom
+
 ### Testing Setup
 
 The project uses **Vitest** with **React Testing Library** for testing:
@@ -174,10 +193,16 @@ The project uses **Vitest** with **React Testing Library** for testing:
 
 **Coverage:**
 - Rating calculation logic (`useLeagueData.ts`): 11 tests covering K-factor, Elo formula, ranking, and edge cases
-- Critical components: `AddPlayerForm`, `MatchRecorder`, `CollapsibleSection`
-- Total: 61 tests across 4 test files
+- Critical components: `AddPlayerForm`, `MatchRecorder`, `CollapsibleSection`, `RatingChart`
+- Chart projection logic: Tests verify correct delta application (especially for underdog wins with larger deltas)
+- Total: 60+ tests across 5 test files
 
 Run tests in watch mode during development for instant feedback on changes.
+
+**Testing Charts:**
+- Mock `recharts` components to avoid rendering complexity in tests
+- Capture `data` prop from LineChart to verify chart data calculations
+- Test projection calculations ensure deltas are applied correctly (not using `Math.abs()` which would break underdog scenarios)
 
 ### Type Checking
 
