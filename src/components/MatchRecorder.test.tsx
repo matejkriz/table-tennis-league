@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock Evolu before any imports that use it
 vi.mock("../evolu/client", () => ({
   useEvolu: vi.fn(),
+  useQuery: vi.fn(() => []),
+  uiPreferencesQuery: {},
   formatTypeError: vi.fn((error) => `Error: ${error.type}`),
 }));
 
