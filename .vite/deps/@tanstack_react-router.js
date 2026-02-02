@@ -1,171 +1,19 @@
 import {
-  require_react_dom
-} from "./chunk-VBV23SZR.js";
+  invariant,
+  require_with_selector
+} from "./chunk-6TLF4D2N.js";
 import {
   require_jsx_runtime
 } from "./chunk-OFNMVIHK.js";
 import {
+  require_react_dom
+} from "./chunk-VBV23SZR.js";
+import {
   require_react
 } from "./chunk-NDZ77MHB.js";
 import {
-  __commonJS,
   __toESM
 } from "./chunk-G3PMV62Z.js";
-
-// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
-var require_use_sync_external_store_shim_development = __commonJS({
-  "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js"(exports) {
-    "use strict";
-    (function() {
-      function is(x, y) {
-        return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
-      }
-      function useSyncExternalStore$2(subscribe2, getSnapshot) {
-        didWarnOld18Alpha || void 0 === React18.startTransition || (didWarnOld18Alpha = true, console.error(
-          "You are using an outdated, pre-release alpha of React 18 that does not support useSyncExternalStore. The use-sync-external-store shim will not work correctly. Upgrade to a newer pre-release."
-        ));
-        var value = getSnapshot();
-        if (!didWarnUncachedGetSnapshot) {
-          var cachedValue = getSnapshot();
-          objectIs(value, cachedValue) || (console.error(
-            "The result of getSnapshot should be cached to avoid an infinite loop"
-          ), didWarnUncachedGetSnapshot = true);
-        }
-        cachedValue = useState5({
-          inst: { value, getSnapshot }
-        });
-        var inst = cachedValue[0].inst, forceUpdate = cachedValue[1];
-        useLayoutEffect3(
-          function() {
-            inst.value = value;
-            inst.getSnapshot = getSnapshot;
-            checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-          },
-          [subscribe2, value, getSnapshot]
-        );
-        useEffect7(
-          function() {
-            checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-            return subscribe2(function() {
-              checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-            });
-          },
-          [subscribe2]
-        );
-        useDebugValue(value);
-        return value;
-      }
-      function checkIfSnapshotChanged(inst) {
-        var latestGetSnapshot = inst.getSnapshot;
-        inst = inst.value;
-        try {
-          var nextValue = latestGetSnapshot();
-          return !objectIs(inst, nextValue);
-        } catch (error) {
-          return true;
-        }
-      }
-      function useSyncExternalStore$1(subscribe2, getSnapshot) {
-        return getSnapshot();
-      }
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var React18 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState5 = React18.useState, useEffect7 = React18.useEffect, useLayoutEffect3 = React18.useLayoutEffect, useDebugValue = React18.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
-      exports.useSyncExternalStore = void 0 !== React18.useSyncExternalStore ? React18.useSyncExternalStore : shim;
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
-    })();
-  }
-});
-
-// node_modules/use-sync-external-store/shim/index.js
-var require_shim = __commonJS({
-  "node_modules/use-sync-external-store/shim/index.js"(exports, module) {
-    "use strict";
-    if (false) {
-      module.exports = null;
-    } else {
-      module.exports = require_use_sync_external_store_shim_development();
-    }
-  }
-});
-
-// node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
-var require_with_selector_development = __commonJS({
-  "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js"(exports) {
-    "use strict";
-    (function() {
-      function is(x, y) {
-        return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
-      }
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-      var React18 = require_react(), shim = require_shim(), objectIs = "function" === typeof Object.is ? Object.is : is, useSyncExternalStore = shim.useSyncExternalStore, useRef7 = React18.useRef, useEffect7 = React18.useEffect, useMemo4 = React18.useMemo, useDebugValue = React18.useDebugValue;
-      exports.useSyncExternalStoreWithSelector = function(subscribe2, getSnapshot, getServerSnapshot, selector, isEqual) {
-        var instRef = useRef7(null);
-        if (null === instRef.current) {
-          var inst = { hasValue: false, value: null };
-          instRef.current = inst;
-        } else inst = instRef.current;
-        instRef = useMemo4(
-          function() {
-            function memoizedSelector(nextSnapshot) {
-              if (!hasMemo) {
-                hasMemo = true;
-                memoizedSnapshot = nextSnapshot;
-                nextSnapshot = selector(nextSnapshot);
-                if (void 0 !== isEqual && inst.hasValue) {
-                  var currentSelection = inst.value;
-                  if (isEqual(currentSelection, nextSnapshot))
-                    return memoizedSelection = currentSelection;
-                }
-                return memoizedSelection = nextSnapshot;
-              }
-              currentSelection = memoizedSelection;
-              if (objectIs(memoizedSnapshot, nextSnapshot))
-                return currentSelection;
-              var nextSelection = selector(nextSnapshot);
-              if (void 0 !== isEqual && isEqual(currentSelection, nextSelection))
-                return memoizedSnapshot = nextSnapshot, currentSelection;
-              memoizedSnapshot = nextSnapshot;
-              return memoizedSelection = nextSelection;
-            }
-            var hasMemo = false, memoizedSnapshot, memoizedSelection, maybeGetServerSnapshot = void 0 === getServerSnapshot ? null : getServerSnapshot;
-            return [
-              function() {
-                return memoizedSelector(getSnapshot());
-              },
-              null === maybeGetServerSnapshot ? void 0 : function() {
-                return memoizedSelector(maybeGetServerSnapshot());
-              }
-            ];
-          },
-          [getSnapshot, getServerSnapshot, selector, isEqual]
-        );
-        var value = useSyncExternalStore(subscribe2, instRef[0], instRef[1]);
-        useEffect7(
-          function() {
-            inst.hasValue = true;
-            inst.value = value;
-          },
-          [value]
-        );
-        useDebugValue(value);
-        return value;
-      };
-      "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
-    })();
-  }
-});
-
-// node_modules/use-sync-external-store/shim/with-selector.js
-var require_with_selector = __commonJS({
-  "node_modules/use-sync-external-store/shim/with-selector.js"(exports, module) {
-    "use strict";
-    if (false) {
-      module.exports = null;
-    } else {
-      module.exports = require_with_selector_development();
-    }
-  }
-});
 
 // node_modules/@tanstack/store/dist/esm/scheduler.js
 var __storeToDerived = /* @__PURE__ */ new WeakMap();
@@ -969,21 +817,6 @@ function encodeNonAscii(path) {
   return path.replace(/[^\u0000-\u007F]/gu, encodeURIComponent);
 }
 
-// node_modules/tiny-invariant/dist/esm/tiny-invariant.js
-var isProduction = false;
-var prefix = "Invariant failed";
-function invariant(condition, message) {
-  if (condition) {
-    return;
-  }
-  if (isProduction) {
-    throw new Error(prefix);
-  }
-  var provided = typeof message === "function" ? message() : message;
-  var value = provided ? "".concat(prefix, ": ").concat(provided) : prefix;
-  throw new Error(value);
-}
-
 // node_modules/@tanstack/router-core/dist/esm/lru-cache.js
 function createLRUCache(max) {
   const cache = /* @__PURE__ */ new Map();
@@ -1199,10 +1032,10 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
           const prefix_raw = path.substring(start2, segment[1]);
           const suffix_raw = path.substring(segment[4], end);
           const actuallyCaseSensitive = caseSensitive && !!(prefix_raw || suffix_raw);
-          const prefix2 = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
+          const prefix = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
           const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
           const existingNode = !skipOnParamError && node.dynamic?.find(
-            (s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix2 && s.suffix === suffix
+            (s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix && s.suffix === suffix
           );
           if (existingNode) {
             nextNode = existingNode;
@@ -1211,7 +1044,7 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
               SEGMENT_TYPE_PARAM,
               route.fullPath ?? route.from,
               actuallyCaseSensitive,
-              prefix2,
+              prefix,
               suffix
             );
             nextNode = next;
@@ -1226,10 +1059,10 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
           const prefix_raw = path.substring(start2, segment[1]);
           const suffix_raw = path.substring(segment[4], end);
           const actuallyCaseSensitive = caseSensitive && !!(prefix_raw || suffix_raw);
-          const prefix2 = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
+          const prefix = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
           const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
           const existingNode = !skipOnParamError && node.optional?.find(
-            (s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix2 && s.suffix === suffix
+            (s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix && s.suffix === suffix
           );
           if (existingNode) {
             nextNode = existingNode;
@@ -1238,7 +1071,7 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
               SEGMENT_TYPE_OPTIONAL_PARAM,
               route.fullPath ?? route.from,
               actuallyCaseSensitive,
-              prefix2,
+              prefix,
               suffix
             );
             nextNode = next;
@@ -1253,13 +1086,13 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
           const prefix_raw = path.substring(start2, segment[1]);
           const suffix_raw = path.substring(segment[4], end);
           const actuallyCaseSensitive = caseSensitive && !!(prefix_raw || suffix_raw);
-          const prefix2 = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
+          const prefix = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
           const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
           const next = createDynamicNode(
             SEGMENT_TYPE_WILDCARD,
             route.fullPath ?? route.from,
             actuallyCaseSensitive,
-            prefix2,
+            prefix,
             suffix
           );
           nextNode = next;
@@ -1391,7 +1224,7 @@ function createStaticNode(fullPath) {
     parsingPriority: 0
   };
 }
-function createDynamicNode(kind, fullPath, caseSensitive, prefix2, suffix) {
+function createDynamicNode(kind, fullPath, caseSensitive, prefix, suffix) {
   return {
     kind,
     depth: 0,
@@ -1409,7 +1242,7 @@ function createDynamicNode(kind, fullPath, caseSensitive, prefix2, suffix) {
     skipOnParamError: false,
     parsingPriority: 0,
     caseSensitive,
-    prefix: prefix2,
+    prefix,
     suffix
   };
 }
@@ -1682,11 +1515,11 @@ function getNodeMatch(path, parts, segmentTree, fuzzy) {
     }
     if (node.wildcard && isFrameMoreSpecific(wildcardMatch, frame)) {
       for (const segment of node.wildcard) {
-        const { prefix: prefix2, suffix } = segment;
-        if (prefix2) {
+        const { prefix, suffix } = segment;
+        if (prefix) {
           if (isBeyondPath) continue;
           const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
-          if (!casePart.startsWith(prefix2)) continue;
+          if (!casePart.startsWith(prefix)) continue;
         }
         if (suffix) {
           if (isBeyondPath) continue;
@@ -1735,10 +1568,10 @@ function getNodeMatch(path, parts, segmentTree, fuzzy) {
       if (!isBeyondPath) {
         for (let i = node.optional.length - 1; i >= 0; i--) {
           const segment = node.optional[i];
-          const { prefix: prefix2, suffix } = segment;
-          if (prefix2 || suffix) {
+          const { prefix, suffix } = segment;
+          if (prefix || suffix) {
             const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
-            if (prefix2 && !casePart.startsWith(prefix2)) continue;
+            if (prefix && !casePart.startsWith(prefix)) continue;
             if (suffix && !casePart.endsWith(suffix)) continue;
           }
           stack.push({
@@ -1759,10 +1592,10 @@ function getNodeMatch(path, parts, segmentTree, fuzzy) {
     if (!isBeyondPath && node.dynamic && part) {
       for (let i = node.dynamic.length - 1; i >= 0; i--) {
         const segment = node.dynamic[i];
-        const { prefix: prefix2, suffix } = segment;
-        if (prefix2 || suffix) {
+        const { prefix, suffix } = segment;
+        if (prefix || suffix) {
           const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
-          if (prefix2 && !casePart.startsWith(prefix2)) continue;
+          if (prefix && !casePart.startsWith(prefix)) continue;
           if (suffix && !casePart.endsWith(suffix)) continue;
         }
         stack.push({
@@ -1961,15 +1794,15 @@ function resolvePath({
       continue;
     }
     const end = segment[5];
-    const prefix2 = part.substring(0, segment[1]);
+    const prefix = part.substring(0, segment[1]);
     const suffix = part.substring(segment[4], end);
     const value = part.substring(segment[2], segment[3]);
     if (kind === SEGMENT_TYPE_PARAM) {
-      joined += prefix2 || suffix ? `${prefix2}{$${value}}${suffix}` : `$${value}`;
+      joined += prefix || suffix ? `${prefix}{$${value}}${suffix}` : `$${value}`;
     } else if (kind === SEGMENT_TYPE_WILDCARD) {
-      joined += prefix2 || suffix ? `${prefix2}{$}${suffix}` : "$";
+      joined += prefix || suffix ? `${prefix}{$}${suffix}` : "$";
     } else {
-      joined += `${prefix2}{-$${value}}${suffix}`;
+      joined += `${prefix}{-$${value}}${suffix}`;
     }
   }
   joined = cleanPath(joined);
@@ -2068,17 +1901,17 @@ function interpolatePath({
       const splat = params._splat;
       usedParams._splat = splat;
       usedParams["*"] = splat;
-      const prefix2 = path.substring(start, segment[1]);
+      const prefix = path.substring(start, segment[1]);
       const suffix = path.substring(segment[4], end);
       if (!splat) {
         isMissingParams = true;
-        if (prefix2 || suffix) {
-          joined += "/" + prefix2 + suffix;
+        if (prefix || suffix) {
+          joined += "/" + prefix + suffix;
         }
         continue;
       }
       const value = encodeParam("_splat", params, decoder);
-      joined += "/" + prefix2 + value + suffix;
+      joined += "/" + prefix + value + suffix;
       continue;
     }
     if (kind === SEGMENT_TYPE_PARAM) {
@@ -2087,10 +1920,10 @@ function interpolatePath({
         isMissingParams = true;
       }
       usedParams[key] = params[key];
-      const prefix2 = path.substring(start, segment[1]);
+      const prefix = path.substring(start, segment[1]);
       const suffix = path.substring(segment[4], end);
       const value = encodeParam(key, params, decoder) ?? "undefined";
-      joined += "/" + prefix2 + value + suffix;
+      joined += "/" + prefix + value + suffix;
       continue;
     }
     if (kind === SEGMENT_TYPE_OPTIONAL_PARAM) {
@@ -2098,10 +1931,10 @@ function interpolatePath({
       const valueRaw = params[key];
       if (valueRaw == null) continue;
       usedParams[key] = valueRaw;
-      const prefix2 = path.substring(start, segment[1]);
+      const prefix = path.substring(start, segment[1]);
       const suffix = path.substring(segment[4], end);
       const value = encodeParam(key, params, decoder) ?? "";
-      joined += "/" + prefix2 + value + suffix;
+      joined += "/" + prefix + value + suffix;
       continue;
     }
   }
@@ -6428,9 +6261,9 @@ function subscribe() {
 }
 
 // node_modules/tiny-warning/dist/tiny-warning.esm.js
-var isProduction2 = false;
+var isProduction = false;
 function warning(condition, message) {
-  if (!isProduction2) {
+  if (!isProduction) {
     if (condition) {
       return;
     }

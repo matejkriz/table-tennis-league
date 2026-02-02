@@ -1,73 +1,82 @@
 {
-  "hash": "e8767c2e",
+  "hash": "2b08b8f3",
   "configHash": "701bdb72",
-  "lockfileHash": "0faa68c5",
-  "browserHash": "bfecef03",
+  "lockfileHash": "b9b4a215",
+  "browserHash": "2c767314",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "68a02abb",
+      "fileHash": "32ca9a43",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "2cf2d1dc",
+      "fileHash": "f06950d9",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "38136eb8",
+      "fileHash": "a72c4f20",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "c2ed27a3",
+      "fileHash": "54e2b80c",
       "needsInterop": true
     },
     "@evolu/common": {
       "src": "../../node_modules/@evolu/common/dist/src/index.js",
       "file": "@evolu_common.js",
-      "fileHash": "24868cc2",
+      "fileHash": "715e2999",
       "needsInterop": false
     },
     "@evolu/react": {
       "src": "../../node_modules/@evolu/react/dist/index.js",
       "file": "@evolu_react.js",
-      "fileHash": "acb4163c",
+      "fileHash": "88c23bde",
       "needsInterop": false
     },
     "@tabler/icons-react": {
       "src": "../../node_modules/@tabler/icons-react/dist/esm/tabler-icons-react.mjs",
       "file": "@tabler_icons-react.js",
-      "fileHash": "cdad3565",
+      "fileHash": "43bee81f",
       "needsInterop": false
     },
     "@tanstack/react-router": {
       "src": "../../node_modules/@tanstack/react-router/dist/esm/index.dev.js",
       "file": "@tanstack_react-router.js",
-      "fileHash": "7e0a375d",
+      "fileHash": "1afc8dfc",
       "needsInterop": false
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "120bd40f",
+      "fileHash": "10198e5d",
       "needsInterop": true
+    },
+    "recharts": {
+      "src": "../../node_modules/recharts/es6/index.js",
+      "file": "recharts.js",
+      "fileHash": "1deba304",
+      "needsInterop": false
     }
   },
   "chunks": {
+    "chunk-6TLF4D2N": {
+      "file": "chunk-6TLF4D2N.js"
+    },
+    "chunk-OFNMVIHK": {
+      "file": "chunk-OFNMVIHK.js"
+    },
     "chunk-MFTVS33O": {
       "file": "chunk-MFTVS33O.js"
     },
     "chunk-VBV23SZR": {
       "file": "chunk-VBV23SZR.js"
-    },
-    "chunk-OFNMVIHK": {
-      "file": "chunk-OFNMVIHK.js"
     },
     "chunk-NDZ77MHB": {
       "file": "chunk-NDZ77MHB.js"
