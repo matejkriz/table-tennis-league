@@ -171,7 +171,33 @@ export const RatingChart = ({
       const dateIso = currentDate.toISOString().split('T')[0];
       const dayMatches = matchesByDate.get(dateIso) || [];
       
+      // Record data point BEFORE reverting matches for this day
+      // This ensures "Nyní" shows current ratings, and historical days show end-of-day ratings
+      const isToday = currentDate.toDateString() === now.toDateString();
+      const point: ChartDataPoint = {
+        date: currentDate.toISOString(),
+        formattedDate: isToday ? "Nyní" : formatDate(currentDate.toISOString()),
+      };
+
+      if (playerA) {
+        const ratingA = ratingState.get(playerA.id)?.rating ?? playerA.initialRating;
+        point[playerA.name] = ratingA;
+        if (bothPlayersSelected) {
+          point[`${playerA.name} (proj)`] = ratingA;
+        }
+      }
+      if (playerB) {
+        const ratingB = ratingState.get(playerB.id)?.rating ?? playerB.initialRating;
+        point[playerB.name] = ratingB;
+        if (bothPlayersSelected) {
+          point[`${playerB.name} (proj)`] = ratingB;
+        }
+      }
+
+      dataPoints.push(point);
+
       // Process all matches for this day in reverse order (from newest to oldest)
+      // This reverts ratings to what they were at the start of this day
       const reversedDayMatches = [...dayMatches].reverse();
       
       reversedDayMatches.forEach((match) => {
@@ -196,30 +222,6 @@ export const RatingChart = ({
         stateA.rating = ratingA - deltaA;
         stateB.rating = ratingB - deltaB;
       });
-
-      // Add data point for this day (showing ratings after all matches of this day)
-      const isToday = currentDate.toDateString() === now.toDateString();
-      const point: ChartDataPoint = {
-        date: currentDate.toISOString(),
-        formattedDate: isToday ? "Nyní" : formatDate(currentDate.toISOString()),
-      };
-
-      if (playerA) {
-        const ratingA = ratingState.get(playerA.id)?.rating ?? playerA.initialRating;
-        point[playerA.name] = ratingA;
-        if (bothPlayersSelected) {
-          point[`${playerA.name} (proj)`] = ratingA;
-        }
-      }
-      if (playerB) {
-        const ratingB = ratingState.get(playerB.id)?.rating ?? playerB.initialRating;
-        point[playerB.name] = ratingB;
-        if (bothPlayersSelected) {
-          point[`${playerB.name} (proj)`] = ratingB;
-        }
-      }
-
-      dataPoints.push(point);
     }
 
     // Reverse to get chronological order (oldest to newest)
