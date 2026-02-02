@@ -304,6 +304,30 @@ export const MatchRecorder = ({
         </label>
       )}
 
+      {preview && playerAId && playerBId && (
+        <div className="rounded border border-black/10 bg-black/5 p-4 text-sm">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-black/60">
+            Projected change
+          </p>
+          <div className="space-y-2 font-mono text-xs text-black/80">
+            <p>
+              {playersById.get(playerAId as PlayerId)?.name ?? "Player A"}:{" "}
+              <span className={preview.deltaA > 0 ? "text-[#F7931A]" : ""}>
+                {formatDelta(preview.deltaA)}
+              </span>{" "}
+              ({preview.ratingA.toFixed(1)} → {(preview.ratingA + preview.deltaA).toFixed(1)})
+            </p>
+            <p>
+              {playersById.get(playerBId as PlayerId)?.name ?? "Player B"}:{" "}
+              <span className={preview.deltaB > 0 ? "text-[#F7931A]" : ""}>
+                {formatDelta(preview.deltaB)}
+              </span>{" "}
+              ({preview.ratingB.toFixed(1)} → {(preview.ratingB + preview.deltaB).toFixed(1)})
+            </p>
+          </div>
+        </div>
+      )}
+
       {error && <p className="text-sm text-black/60">{error}</p>}
 
       {playerAId && playerBId && (
@@ -320,3 +344,8 @@ export const MatchRecorder = ({
   );
 };
 
+const formatDelta = (delta: number): string => {
+  if (Number.isNaN(delta)) return "+0.0";
+  const sign = delta >= 0 ? "+" : "";
+  return `${sign}${delta.toFixed(1)}`;
+};
