@@ -5,6 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
 import { K_FACTOR } from "../hooks/useLeagueData";
+import { CollapsibleSection } from "./CollapsibleSection";
 import { RatingChart } from "./RatingChart";
 
 const PLAYER_A_COLOR = "#F7931A";
@@ -181,24 +182,6 @@ export const MatchRecorder = ({
         </label>
       </div>
 
-      {(playerAId || playerBId) && (
-        <div className="border-t border-black/10 pt-5">
-          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
-            Rating history (90 days)
-          </p>
-          <RatingChart
-            matches={matches}
-            players={players}
-            playerAId={playerAId}
-            playerBId={playerBId}
-            currentRatings={currentRatings}
-            projectedDeltaA={preview?.deltaA ?? 0}
-            projectedDeltaB={preview?.deltaB ?? 0}
-            winnerId={winnerId}
-          />
-        </div>
-      )}
-
       {playerAId && playerBId && (
         <div className="border-t border-black/10 pt-5">
           <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
@@ -302,6 +285,25 @@ export const MatchRecorder = ({
             onChange={(event) => setNote(event.target.value)}
           />
         </label>
+      )}
+
+      {(playerAId || playerBId) && (
+        <CollapsibleSection
+          storageKey="match-recorder-rating-history"
+          title="Rating history (90 days)"
+          defaultOpen={false}
+        >
+          <RatingChart
+            matches={matches}
+            players={players}
+            playerAId={playerAId}
+            playerBId={playerBId}
+            currentRatings={currentRatings}
+            projectedDeltaA={preview?.deltaA ?? 0}
+            projectedDeltaB={preview?.deltaB ?? 0}
+            winnerId={winnerId}
+          />
+        </CollapsibleSection>
       )}
 
       {preview && playerAId && playerBId && (
