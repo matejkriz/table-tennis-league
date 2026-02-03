@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A local-first Progressive Web App (PWA) for tracking table tennis league ratings using the STR (Skill-based Team Ranking) system. Built with React, TanStack Router, and Evolu for local-first data synchronization.
+A local-first Progressive Web App (PWA) for tracking table tennis league ratings using the STR (Skill-based Team Ranking) system. Built with React, TanStack Router, and Evolu for local-first data synchronization. Supports English and Czech languages with automatic browser language detection.
 
 ## Common Commands
 
@@ -104,6 +104,145 @@ Component patterns used throughout:
 - **UI state (persisted)**: Stored in Evolu's `_uiPreference` table for collapsible sections
 - **Local form state**: React's `useState()` for form inputs and temporary UI state
 
+### Internationalization (i18n)
+
+The app supports **English** and **Czech** languages using `react-i18next` with natural English keys:
+
+**Architecture**:
+- `src/i18n/index.ts`: i18next configuration with browser language detection
+- `src/i18n/locales/cs.json`: Czech translations (English → Czech mapping)
+- `src/hooks/useLanguagePreference.ts`: Custom hook syncing i18next with Evolu storage
+- `src/components/LanguageSelector.tsx`: UI component for language switching in Settings
+
+**Natural English Keys Approach**:
+
+The app uses English text directly as translation keys - no separate English translation file needed:
+
+```tsx
+// In component:
+const { t } = useTranslation();
+return <button>{t("Add player")}</button>;
+
+// When language is English: displays "Add player" (the key itself)
+// When language is Czech: displays "Přidat hráče" (from cs.json)
+```
+
+**i18next Configuration**:
+```typescript
+i18next.init({
+  fallbackLng: "en",
+  supportedLngs: ["en", "cs"],
+  keySeparator: false,    // Allows keys with dots like "e.g. Katarína"
+  nsSeparator: false,     // Allows keys with colons
+  resources: {
+    cs: { translation: csTranslations },
+    // No 'en' resource - falls back to key
+  },
+});
+```
+
+**How to Use Translations in Components**:
+
+1. Import `useTranslation` hook:
+   ```tsx
+   import { useTranslation } from "react-i18next";
+   ```
+
+2. Get `t` function in component:
+   ```tsx
+   const { t } = useTranslation();
+   ```
+
+3. Wrap English text strings:
+   ```tsx
+   // Simple text
+   <h1>{t("Table Tennis League")}</h1>
+   
+   // With interpolation
+   <p>{t("This device has {{count}} registered profiles.", { count: 5 })}</p>
+   
+   // In attributes
+   <input placeholder={t("Player name")} />
+   <button title={t("Delete match")} />
+   ```
+
+4. For date formatting, also access `i18n`:
+   ```tsx
+   const { t, i18n } = useTranslation();
+   date.toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
+   ```
+
+**Adding New Translations**:
+
+1. Use English text in code wrapped in `t()`:
+   ```tsx
+   <span>{t("New feature text")}</span>
+   ```
+
+2. Add Czech translation to `src/i18n/locales/cs.json`:
+   ```json
+   {
+     "New feature text": "Nový text funkce"
+   }
+   ```
+
+3. **Important**: If you change existing English text in code, update the corresponding key in `cs.json`
+
+**Language Persistence**:
+
+- User language choice stored in Evolu's `_uiPreference` table with key `"app-language"`
+- On first visit: Browser language detected (Czech if system is Czech, otherwise English)
+- After manual selection: User's choice persists locally per device
+- Not synced across devices (local preference only)
+
+**Language Switching**:
+
+Users can switch language in Settings page:
+- Language selector shows "English" and "Czech" (localized)
+- Selected language has orange background with checkmark
+- Changes apply immediately to all components
+
+**Testing with i18n**:
+
+Tests are configured to return English text (keys as-is):
+
+```typescript
+// In src/test/setup.ts
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,  // Returns the key itself (English)
+    i18n: { language: "en", changeLanguage: vi.fn() },
+  }),
+}));
+```
+
+This means test assertions use English strings:
+```tsx
+expect(screen.getByText("Add player")).toBeInTheDocument();
+```
+
+**Date and Number Formatting**:
+
+Always use `i18n.language` for locale-aware formatting:
+
+```tsx
+const { i18n } = useTranslation();
+
+// Dates
+date.toLocaleDateString(i18n.language, options);
+date.toLocaleString(i18n.language, options);
+
+// Numbers
+number.toLocaleString(i18n.language);
+```
+
+Include `i18n.language` in dependency arrays to re-render on language change:
+```tsx
+useMemo(() => {
+  // ... calculations using i18n.language for formatting
+}, [otherDeps, i18n.language]);
+```
+
 ## Key Technical Details
 
 ### Evolu Data Flow
@@ -189,7 +328,8 @@ The project uses **Vitest** with **React Testing Library** for testing:
 
 - **Evolu mocking**: Test files mock the Evolu client module before imports to prevent WebWorker initialization in jsdom
 - **Mock pattern**: Each test file includes `vi.mock("../evolu/client")` at the top with mocked hooks (`useEvolu`, `useQuery`, etc.)
-- **Test setup**: Global setup in `src/test/setup.ts` includes fake-indexeddb and @testing-library/jest-dom matchers
+- **i18n mocking**: Global mock in `src/test/setup.ts` returns keys as-is (English behavior) - use English strings in test assertions
+- **Test setup**: Global setup in `src/test/setup.ts` includes fake-indexeddb, @testing-library/jest-dom matchers, and i18next mock
 
 **Coverage:**
 - Rating calculation logic (`useLeagueData.ts`): 11 tests covering K-factor, Elo formula, ranking, and edge cases
@@ -235,6 +375,7 @@ Run tests in watch mode during development for instant feedback on changes.
 - Export branded ID types (e.g., `export const FooId = Evolu.id("Foo")`)
 - Use TanStack Router's file-based routing for new pages
 - Follow existing component patterns for consistency (especially CollapsibleSection for grouping content)
+- **Localization**: Wrap all user-facing text in `t()` function and add Czech translations to `src/i18n/locales/cs.json`
 - Write tests for new business logic and critical components (place `.test.ts` files alongside source files)
 - **Always run `yarn typecheck` after code changes** - zero TypeScript errors required
 

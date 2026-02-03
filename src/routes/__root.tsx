@@ -1,20 +1,27 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Navigation } from "../components/Navigation";
 import { EvoluProvider, evolu } from "../evolu/client";
 
-export const Route = createRootRoute({
-  component: () => (
+const RootComponent = () => {
+  const { t } = useTranslation();
+  
+  return (
     <EvoluProvider value={evolu}>
       <Suspense
         fallback={
-          <div className="p-6 text-center text-black/40">Loading…</div>
+          <div className="p-6 text-center text-black/40">{t("Loading…")}</div>
         }
       >
         <Navigation />
         <Outlet />
       </Suspense>
     </EvoluProvider>
-  ),
+  );
+};
+
+export const Route = createRootRoute({
+  component: RootComponent,
 });

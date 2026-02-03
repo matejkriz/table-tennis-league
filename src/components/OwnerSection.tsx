@@ -2,6 +2,7 @@ import * as Evolu from "@evolu/common";
 import { EvoluIdenticon } from "@evolu/react-web";
 import { IconKey, IconSparkles, IconTrash } from "@tabler/icons-react";
 import { use, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   authResult,
@@ -11,12 +12,13 @@ import {
 } from "../evolu/client";
 
 export const OwnerSection = () => {
+  const { t } = useTranslation();
   const evolu = useEvolu();
   const appOwner = use(evolu.appOwner);
   const [showMnemonic, setShowMnemonic] = useState(false);
 
   const handleRestoreClick = () => {
-    const mnemonic = window.prompt("Enter the mnemonic from another device:");
+    const mnemonic = window.prompt(t("Enter the mnemonic from another device:"));
     if (mnemonic == null) return;
 
     const parsed = Evolu.Mnemonic.from(mnemonic.trim());
@@ -42,7 +44,7 @@ export const OwnerSection = () => {
 
   const handleResetClick = () => {
     const confirmed = window.confirm(
-      "Reset local data? This keeps your mnemonic but wipes the device copy."
+      t("Reset local data? This keeps your mnemonic but wipes the device copy.")
     );
     if (!confirmed) return;
     void evolu.resetAppOwner();
@@ -55,10 +57,10 @@ export const OwnerSection = () => {
           {appOwner && <EvoluIdenticon id={appOwner.id} />}
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium uppercase tracking-wider text-black/50">
-              Sync identity
+              {t("Sync identity")}
             </p>
             <p className="mt-1 text-base font-medium text-black">
-              {authResult?.username ?? "Guest"}
+              {authResult?.username ?? t("Guest")}
             </p>
             <p className="mt-1 truncate text-xs font-mono text-black/40">
               {appOwner?.id}
@@ -67,14 +69,11 @@ export const OwnerSection = () => {
         </div>
         <div className="mt-4 space-y-2 text-sm text-black/60">
           <p>
-            Evolu keeps your data in device SQLite first and syncs end-to-end
-            encrypted when you restore with the same mnemonic on another
-            browser.
+            {t("Evolu keeps your data in device SQLite first and syncs end-to-end encrypted when you restore with the same mnemonic on another browser.")}
           </p>
           {ownerProfiles.length > 1 && (
             <p className="mt-3 rounded border border-black/10 bg-white px-3 py-2 text-black/70">
-              This device has {ownerProfiles.length} registered profiles. Use
-              passkeys to switch quickly.
+              {t("This device has {{count}} registered profiles. Use passkeys to switch quickly.", { count: ownerProfiles.length })}
             </p>
           )}
         </div>
@@ -88,9 +87,9 @@ export const OwnerSection = () => {
         >
           <IconKey className="h-4 w-4" />
           <span className="hidden sm:inline">
-            {showMnemonic ? "Hide mnemonic" : "Show mnemonic"}
+            {showMnemonic ? t("Hide mnemonic") : t("Show mnemonic")}
           </span>
-          <span className="sm:hidden">Mnemonic</span>
+          <span className="sm:hidden">{t("Mnemonic")}</span>
         </button>
         <button
           className="flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
@@ -98,8 +97,8 @@ export const OwnerSection = () => {
           type="button"
         >
           <IconSparkles className="h-4 w-4" />
-          <span className="hidden sm:inline">Restore data</span>
-          <span className="sm:hidden">Restore</span>
+          <span className="hidden sm:inline">{t("Restore data")}</span>
+          <span className="sm:hidden">{t("Restore")}</span>
         </button>
         <button
           className="flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3.5 text-sm font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
@@ -107,15 +106,15 @@ export const OwnerSection = () => {
           type="button"
         >
           <IconTrash className="h-4 w-4" />
-          <span className="hidden sm:inline">Reset device</span>
-          <span className="sm:hidden">Reset</span>
+          <span className="hidden sm:inline">{t("Reset device")}</span>
+          <span className="sm:hidden">{t("Reset")}</span>
         </button>
       </div>
 
       {showMnemonic && appOwner?.mnemonic && (
         <div className="rounded border border-black/10 bg-black/5 p-4 text-sm">
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-black/60">
-            Your mnemonic (store securely)
+            {t("Your mnemonic (store securely)")}
           </p>
           <p className="font-mono text-xs leading-relaxed text-black/80">
             {appOwner.mnemonic}
@@ -130,14 +129,14 @@ export const OwnerSection = () => {
               }}
               type="button"
             >
-              Copy
+              {t("Copy")}
             </button>
             <button
               className="rounded-xl border border-black/10 bg-white px-5 py-2 text-xs font-medium text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
               onClick={handleExportDatabase}
               type="button"
             >
-              Export backup
+              {t("Export backup")}
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   LineChart,
   Line,
@@ -87,6 +88,7 @@ export const RatingChart = ({
   projectedDeltaB,
   winnerId,
 }: RatingChartProps) => {
+  const { t, i18n } = useTranslation();
   const playersById = useMemo(() => {
     const map = new Map<PlayerId, PlayerRow>();
     players.forEach((player) => map.set(player.id, player));
@@ -164,7 +166,7 @@ export const RatingChart = ({
     // Add starting point (90 days ago)
     const startPoint: ChartDataPoint = {
       date: cutoffDate.toISOString(),
-      formattedDate: formatDate(cutoffDate.toISOString()),
+      formattedDate: formatDate(cutoffDate.toISOString(), i18n.language),
     };
     if (playerA) {
       const ratingA = ratingState.get(playerA.id)?.rating ?? playerA.initialRating;
@@ -209,7 +211,7 @@ export const RatingChart = ({
       if (currentDate !== nextDate) {
         const point: ChartDataPoint = {
           date: match.playedAt,
-          formattedDate: formatDate(match.playedAt),
+          formattedDate: formatDate(match.playedAt, i18n.language),
         };
         if (playerA) {
           point[playerA.name] = ratingState.get(playerA.id)?.rating ?? playerA.initialRating;
@@ -230,7 +232,7 @@ export const RatingChart = ({
     // Add current point ("Now")
     const nowPoint: ChartDataPoint = {
       date: now.toISOString(),
-      formattedDate: "Now",
+      formattedDate: t("Now"),
     };
     if (playerA && currentA) {
       nowPoint[playerA.name] = currentA.rating;
@@ -251,7 +253,7 @@ export const RatingChart = ({
       const projectionDate = new Date(now.getTime() + 86400000);
       const projPoint: ChartDataPoint = {
         date: projectionDate.toISOString(),
-        formattedDate: "Projection",
+        formattedDate: t("Projection"),
       };
       projPoint[playerA.name] = null;
       projPoint[playerB.name] = null;
@@ -277,6 +279,8 @@ export const RatingChart = ({
     projectedDeltaA,
     projectedDeltaB,
     winnerId,
+    t,
+    i18n.language,
   ]);
 
   if (!chartData) return null;
@@ -378,9 +382,9 @@ export const RatingChart = ({
   );
 };
 
-const formatDate = (isoDate: string): string => {
+const formatDate = (isoDate: string, locale: string): string => {
   const date = new Date(isoDate);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
   });

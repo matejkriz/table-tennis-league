@@ -35,6 +35,7 @@ const Schema = {
     id: UiPreferenceId,
     key: Evolu.NonEmptyTrimmedString100,
     isOpen: Evolu.SqliteBoolean,
+    value: Evolu.nullOr(Evolu.NonEmptyTrimmedString100),
   },
 };
 
@@ -170,7 +171,7 @@ export type MatchRow = typeof matchesQuery.Row;
 export const uiPreferencesQuery = evolu.createQuery((db) =>
   db
     .selectFrom("_uiPreference")
-    .select(["id", "key", "isOpen"])
+    .select(["id", "key", "isOpen", "value"])
     .where("isDeleted", "is not", Evolu.sqliteTrue)
     .where("key", "is not", null)
     .$narrowType<{ key: Evolu.kysely.NotNull }>()

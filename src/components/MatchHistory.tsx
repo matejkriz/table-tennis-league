@@ -1,5 +1,6 @@
 import * as Evolu from "@evolu/common";
 import { IconTrash } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import { formatTypeError, useEvolu } from "../evolu/client";
 import type { MatchSummary } from "../hooks/useLeagueData";
@@ -10,12 +11,13 @@ interface MatchHistoryProps {
 }
 
 export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) => {
+  const { t } = useTranslation();
   const { update } = useEvolu();
 
   if (matches.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-black/50">
-        Every match you record appears here with the STR rating changes.
+        {t("Every match you record appears here with the STR rating changes.")}
       </p>
     );
   }
@@ -26,7 +28,7 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
 
   const handleDelete = (matchId: string) => {
     const confirmed = window.confirm(
-      "Delete this match? This will also revert rating calculations based on it.",
+      t("Delete this match? This will also revert rating calculations based on it."),
     );
     if (!confirmed) return;
 
@@ -55,9 +57,9 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
                   {new Date(match.playedAt).toLocaleString()}
                 </p>
                 <p className="mt-2 text-base font-medium text-black">
-                  {winner?.name ?? "Winner"}
+                  {winner?.name ?? t("Winner")}
                   <span className="ml-2 text-sm font-normal text-black/60">
-                    defeated {loser?.name ?? "Opponent"}
+                    {t("defeated")} {loser?.name ?? t("Opponent")}
                   </span>
                 </p>
               </div>
@@ -65,7 +67,7 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
                 <button
                   className="flex-shrink-0 p-2 text-black/30 transition-colors hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
                   onClick={() => handleDelete(match.id)}
-                  title="Delete match"
+                  title={t("Delete match")}
                   type="button"
                 >
                   <IconTrash className="h-4 w-4" />
@@ -76,7 +78,7 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
             <dl className="mt-4 grid grid-cols-2 gap-4">
               <div className="rounded border border-black/10 bg-black/5 p-3">
                 <dt className="text-xs font-medium uppercase tracking-wide text-black/50">
-                  {players.a?.name ?? "Player A"}
+                  {players.a?.name ?? t("Player A")}
                 </dt>
                 <dd className="mt-1.5 font-mono text-sm text-black">
                   <span className={delta.a && delta.a > 0 ? "text-[#F7931A]" : ""}>
@@ -87,7 +89,7 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
               </div>
               <div className="rounded border border-black/10 bg-black/5 p-3">
                 <dt className="text-xs font-medium uppercase tracking-wide text-black/50">
-                  {players.b?.name ?? "Player B"}
+                  {players.b?.name ?? t("Player B")}
                 </dt>
                 <dd className="mt-1.5 font-mono text-sm text-black">
                   <span className={delta.b && delta.b > 0 ? "text-[#F7931A]" : ""}>

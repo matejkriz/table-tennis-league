@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import type { RankingEntry } from "../hooks/useLeagueData";
 
 interface RankingListProps {
@@ -5,10 +7,12 @@ interface RankingListProps {
 }
 
 export const RankingList = ({ ranking }: RankingListProps) => {
+  const { t } = useTranslation();
+  
   if (ranking.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-black/50">
-        Add players and record a match to see the live table.
+        {t("Add players and record a match to see the live table.")}
       </p>
     );
   }
@@ -25,7 +29,7 @@ export const RankingList = ({ ranking }: RankingListProps) => {
               {entry.player.name}
             </p>
             <p className="mt-0.5 text-xs text-black/50">
-              {entry.matchCount} matches • Start {entry.player.initialRating.toFixed(1)}
+              {entry.matchCount} {t("matches")} • {t("Start")} {entry.player.initialRating.toFixed(1)}
             </p>
           </div>
           <div className="flex-shrink-0 text-right">

@@ -5,8 +5,10 @@ import {
   IconTrophy,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const Navigation = () => {
+  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export const Navigation = () => {
             }}
           >
             <IconTrophy size={24} stroke={1.5} />
-            <span className="text-xs font-medium">Match</span>
+            <span className="text-xs font-medium">{t("Match")}</span>
           </Link>
 
           <Link
@@ -46,7 +48,7 @@ export const Navigation = () => {
             }}
           >
             <IconChartBar size={24} stroke={1.5} />
-            <span className="text-xs font-medium">Stats</span>
+            <span className="text-xs font-medium">{t("Stats")}</span>
           </Link>
 
           <Link
@@ -58,7 +60,7 @@ export const Navigation = () => {
             }}
           >
             <IconSettings size={24} stroke={1.5} />
-            <span className="text-xs font-medium">Settings</span>
+            <span className="text-xs font-medium">{t("Settings")}</span>
           </Link>
         </div>
       </nav>
@@ -82,7 +84,7 @@ export const Navigation = () => {
         >
           <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
             <span className="text-lg font-light text-black">
-              Table Tennis League
+              {t("Table Tennis League")}
             </span>
             <div className="flex items-center gap-8">
               <Link
@@ -93,7 +95,7 @@ export const Navigation = () => {
                     "relative pb-1 text-sm font-medium text-[#F7931A] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#F7931A] after:rounded-full",
                 }}
               >
-                Match
+                {t("Match")}
               </Link>
 
               <Link
@@ -104,7 +106,7 @@ export const Navigation = () => {
                     "relative pb-1 text-sm font-medium text-[#F7931A] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#F7931A] after:rounded-full",
                 }}
               >
-                Stats
+                {t("Stats")}
               </Link>
 
               <Link
@@ -115,7 +117,7 @@ export const Navigation = () => {
                     "relative pb-1 text-sm font-medium text-[#F7931A] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#F7931A] after:rounded-full",
                 }}
               >
-                Settings
+                {t("Settings")}
               </Link>
             </div>
           </div>

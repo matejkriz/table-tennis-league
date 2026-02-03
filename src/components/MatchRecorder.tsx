@@ -1,6 +1,7 @@
 import * as Evolu from "@evolu/common";
 import { IconMoodSad, IconTrophy } from "@tabler/icons-react";
 import { FormEvent, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
@@ -22,6 +23,7 @@ export const MatchRecorder = ({
   currentRatings,
   matches,
 }: MatchRecorderProps) => {
+  const { t } = useTranslation();
   const { insert } = useEvolu();
   const [playerAId, setPlayerAId] = useState<PlayerId | "">(
     players[0]?.id ?? "",
@@ -74,17 +76,17 @@ export const MatchRecorder = ({
     setError(null);
 
     if (!playerAId || !playerBId) {
-      setError("Choose two players.");
+      setError(t("Choose two players."));
       return;
     }
 
     if (playerAId === playerBId) {
-      setError("Players must be different.");
+      setError(t("Players must be different."));
       return;
     }
 
     if (winnerId !== playerAId && winnerId !== playerBId) {
-      setError("Winner must be one of the selected players.");
+      setError(t("Winner must be one of the selected players."));
       return;
     }
 
@@ -116,7 +118,7 @@ export const MatchRecorder = ({
   if (players.length < 2) {
     return (
       <p className="py-8 text-center text-sm text-black/50">
-        Add at least two players to record a match.
+        {t("Add at least two players to record a match.")}
       </p>
     );
   }
@@ -126,7 +128,7 @@ export const MatchRecorder = ({
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            Player A
+            {t("Player A")}
           </span>
           <select
             className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
@@ -144,7 +146,7 @@ export const MatchRecorder = ({
               }
             }}
           >
-            <option value="">Select player</option>
+            <option value="">{t("Select player")}</option>
             {players.map((player) => (
               <option key={player.id} value={player.id}>
                 {player.name}
@@ -154,7 +156,7 @@ export const MatchRecorder = ({
         </label>
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            Player B
+            {t("Player B")}
           </span>
           <select
             className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
@@ -172,7 +174,7 @@ export const MatchRecorder = ({
               }
             }}
           >
-            <option value="">Select player</option>
+            <option value="">{t("Select player")}</option>
             {players.map((player) => (
               <option key={player.id} value={player.id}>
                 {player.name}
@@ -185,7 +187,7 @@ export const MatchRecorder = ({
       {playerAId && playerBId && (
         <div className="border-t border-black/10 pt-5">
           <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
-            Winner
+            {t("Winner")}
           </p>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -256,12 +258,12 @@ export const MatchRecorder = ({
                         className="text-xs font-semibold uppercase tracking-wider"
                         style={{ color }}
                       >
-                        Winner
+                        {t("Winner")}
                       </span>
                     )}
                     {isLoser && (
                       <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                        Loser
+                        {t("Loser")}
                       </span>
                     )}
                   </button>
@@ -274,12 +276,12 @@ export const MatchRecorder = ({
       {playerAId && playerBId && (
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            Optional note
+            {t("Optional note")}
           </span>
           <textarea
             className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
             maxLength={1000}
-            placeholder="Score, highlights, etc."
+            placeholder={t("Score, highlights, etc.")}
             rows={3}
             value={note}
             onChange={(event) => setNote(event.target.value)}
@@ -290,7 +292,7 @@ export const MatchRecorder = ({
       {(playerAId || playerBId) && (
         <CollapsibleSection
           storageKey="match-recorder-rating-history"
-          title="Rating history (90 days)"
+          title={t("Rating history (90 days)")}
           defaultOpen={false}
         >
           <RatingChart
@@ -309,18 +311,18 @@ export const MatchRecorder = ({
       {preview && playerAId && playerBId && (
         <div className="rounded border border-black/10 bg-black/5 p-4 text-sm">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-black/60">
-            Projected change
+            {t("Projected change")}
           </p>
           <div className="space-y-2 font-mono text-xs text-black/80">
             <p>
-              {playersById.get(playerAId as PlayerId)?.name ?? "Player A"}:{" "}
+              {playersById.get(playerAId as PlayerId)?.name ?? t("Player A")}:{" "}
               <span className={preview.deltaA > 0 ? "text-[#F7931A]" : ""}>
                 {formatDelta(preview.deltaA)}
               </span>{" "}
               ({preview.ratingA.toFixed(1)} → {(preview.ratingA + preview.deltaA).toFixed(1)})
             </p>
             <p>
-              {playersById.get(playerBId as PlayerId)?.name ?? "Player B"}:{" "}
+              {playersById.get(playerBId as PlayerId)?.name ?? t("Player B")}:{" "}
               <span className={preview.deltaB > 0 ? "text-[#F7931A]" : ""}>
                 {formatDelta(preview.deltaB)}
               </span>{" "}
@@ -338,7 +340,7 @@ export const MatchRecorder = ({
             className="rounded-full bg-[#F7931A] px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#F7931A]/90 hover:shadow-lg active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"
             type="submit"
           >
-            Record match
+            {t("Record match")}
           </button>
         </div>
       )}

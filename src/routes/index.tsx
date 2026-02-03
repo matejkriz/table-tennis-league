@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { CollapsibleSection } from "../components/CollapsibleSection";
 import { MatchHistory } from "../components/MatchHistory";
@@ -9,6 +10,7 @@ import type { PlayerId } from "../evolu/client";
 import { useLeagueData } from "../hooks/useLeagueData";
 
 const MatchPage = () => {
+  const { t } = useTranslation();
   const { players, ranking, matches } = useLeagueData();
 
   const ratingMap = useMemo(() => {
@@ -23,14 +25,14 @@ const MatchPage = () => {
     <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-40 sm:px-6 sm:py-8 md:pb-8 md:pt-20">
       <header className="mb-10">
         <h1 className="text-3xl font-light text-black sm:text-4xl">
-          Record Match
+          {t("Record Match")}
         </h1>
       </header>
 
       <div className="space-y-6">
         <CollapsibleSection
           storageKey="section-match-record-match"
-          title="Record match"
+          title={t("Record match")}
           defaultOpen={true}
         >
           <MatchRecorder currentRatings={ratingMap} players={players} matches={matches.map(m => m.match)} />
@@ -38,7 +40,7 @@ const MatchPage = () => {
 
         <CollapsibleSection
           storageKey="section-match-match-history"
-          title="Match history"
+          title={t("Match history")}
           defaultOpen={false}
         >
           <MatchHistory matches={matches} />
@@ -46,9 +48,9 @@ const MatchPage = () => {
 
         <CollapsibleSection
           storageKey="section-match-ranking"
-          title="Ranking"
+          title={t("Ranking")}
           defaultOpen={false}
-          headerRight="STR"
+          headerRight={t("STR")}
         >
           <RankingList ranking={ranking} />
         </CollapsibleSection>
