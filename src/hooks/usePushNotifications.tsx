@@ -130,14 +130,13 @@ export const PushNotificationsProvider = ({
   );
 
   const flushFallback = useCallback(async (): Promise<void> => {
-    if (!supported || !isEnabled) return;
     if (hasBackgroundSync) return;
 
     await flushFallbackQueue({
       storage: window.localStorage,
       send: sendEvent,
     });
-  }, [hasBackgroundSync, isEnabled, sendEvent, supported]);
+  }, [hasBackgroundSync, sendEvent]);
 
   useEffect(() => {
     if (!appOwner?.mnemonic) {
@@ -162,7 +161,7 @@ export const PushNotificationsProvider = ({
   }, [supported]);
 
   useEffect(() => {
-    if (!supported || !isEnabled) return;
+    if (hasBackgroundSync) return;
 
     void flushFallback();
 
@@ -172,7 +171,7 @@ export const PushNotificationsProvider = ({
 
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [flushFallback, isEnabled, supported]);
+  }, [flushFallback, hasBackgroundSync]);
 
   const enableNotifications = useCallback(async (): Promise<boolean> => {
     if (!supported) return false;
@@ -326,8 +325,6 @@ export const PushNotificationsProvider = ({
 
   const enqueueMatchNotification = useCallback(
     async (input: EnqueueMatchNotificationInput): Promise<boolean> => {
-      if (!supported || !isEnabled) return false;
-
       const context = getContextFields();
       if (!context) return false;
 
@@ -352,7 +349,7 @@ export const PushNotificationsProvider = ({
 
       return false;
     },
-    [getContextFields, hasBackgroundSync, isEnabled, sendEvent, supported],
+    [getContextFields, hasBackgroundSync, sendEvent],
   );
 
   const contextValue = useMemo<PushNotificationsContextValue>(
