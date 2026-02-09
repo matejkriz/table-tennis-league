@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
 import { K_FACTOR } from "../hooks/useLeagueData";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { RatingChart } from "./RatingChart";
 
@@ -25,6 +26,7 @@ export const MatchRecorder = ({
 }: MatchRecorderProps) => {
   const { t } = useTranslation();
   const { insert } = useEvolu();
+  const { enqueueMatchNotification } = usePushNotifications();
   const [playerAId, setPlayerAId] = useState<PlayerId | "">(
     players[0]?.id ?? "",
   );
@@ -97,6 +99,9 @@ export const MatchRecorder = ({
     }
 
     const trimmedNote = note.trim();
+    const winner = playersById.get(winnerId as PlayerId);
+    const playerA = playerAId ? playersById.get(playerAId) : undefined;
+    const playerB = playerBId ? playersById.get(playerBId) : undefined;
 
     const insertResult = insert(
       "match",
@@ -107,7 +112,19 @@ export const MatchRecorder = ({
         playedAt: playedAtResult.value,
         note: trimmedNote.length > 0 ? trimmedNote : null,
       },
-      { onComplete: resetForm },
+      {
+        onComplete: () => {
+          resetForm();
+
+          if (!playerA || !playerB || !winner) return;
+          void enqueueMatchNotification({
+            playedAt: playedAtResult.value,
+            playerAName: playerA.name,
+            playerBName: playerB.name,
+            winnerName: winner.name,
+          });
+        },
+      },
     );
 
     if (!insertResult.ok) {

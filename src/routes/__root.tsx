@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Navigation } from "../components/Navigation";
 import { EvoluProvider, evolu } from "../evolu/client";
+import { PushNotificationsProvider } from "../hooks/usePushNotifications";
 
 const RootComponent = () => {
   const { t } = useTranslation();
@@ -15,8 +16,10 @@ const RootComponent = () => {
           <div className="p-6 text-center text-black/40">{t("Loading…")}</div>
         }
       >
-        <Navigation />
-        <Outlet />
+        <PushNotificationsProvider>
+          <Navigation />
+          <Outlet />
+        </PushNotificationsProvider>
       </Suspense>
     </EvoluProvider>
   );

@@ -57,5 +57,22 @@
   "Projection": "Projekce",
   "Language": "Jazyk",
   "English": "Angličtina",
-  "Czech": "Čeština"
+  "Czech": "Čeština",
+  "Push notifications": "Push notifikace",
+  "This browser does not support push notifications.": "Tento prohlížeč nepodporuje push notifikace.",
+  "Enable notifications to receive match updates on your other devices.": "Zapněte notifikace, abyste dostávali aktualizace zápasů na ostatních zařízeních.",
+  "Permission": "Oprávnění",
+  "Allowed": "Povoleno",
+  "Blocked": "Blokováno",
+  "Not requested": "Nevyžádáno",
+  "Subscription": "Odběr",
+  "Active": "Aktivní",
+  "Inactive": "Neaktivní",
+  "Delivery mode": "Režim doručení",
+  "Background sync": "Synchronizace na pozadí",
+  "Fallback queue": "Záložní fronta",
+  "Enable notifications": "Zapnout notifikace",
+  "Disable notifications": "Vypnout notifikace",
+  "Re-subscribe": "Obnovit odběr",
+  "Send test notification": "Odeslat testovací notifikaci"
 }
