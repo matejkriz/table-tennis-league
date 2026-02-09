@@ -29,6 +29,7 @@ interface PushNotificationsContextValue {
   readonly isBusy: boolean;
   readonly hasBackgroundSync: boolean;
   readonly error: string | null;
+  readonly statusMessage: string | null;
   readonly enableNotifications: () => Promise<boolean>;
   readonly disableNotifications: () => Promise<boolean>;
   readonly reSubscribe: () => Promise<boolean>;
@@ -48,6 +49,7 @@ const defaultContextValue: PushNotificationsContextValue = {
   isBusy: false,
   hasBackgroundSync: false,
   error: null,
+  statusMessage: null,
   enableNotifications: async () => false,
   disableNotifications: async () => false,
   reSubscribe: async () => false,
@@ -61,7 +63,15 @@ const PushNotificationsContext =
 const getRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
   if (!("serviceWorker" in navigator)) return null;
 
-  return navigator.serviceWorker.ready;
+  const existing = await navigator.serviceWorker.getRegistration();
+  if (existing) return existing;
+
+  return Promise.race<ServiceWorkerRegistration | null>([
+    navigator.serviceWorker.ready,
+    new Promise<null>((resolve) => {
+      window.setTimeout(() => resolve(null), 3000);
+    }),
+  ]);
 };
 
 const readEnabledPreference = (): boolean => {
@@ -78,7 +88,7 @@ export const PushNotificationsProvider = ({
 }: {
   readonly children: ReactNode;
 }) => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const appOwner = use(evolu.appOwner);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>(
@@ -90,6 +100,7 @@ export const PushNotificationsProvider = ({
     typeof window === "undefined" ? false : readEnabledPreference(),
   );
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const supported = isPushSupported();
   const hasBackgroundSync = hasBackgroundSyncSupport();
@@ -171,12 +182,14 @@ export const PushNotificationsProvider = ({
 
     const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
-      setError("Missing VITE_VAPID_PUBLIC_KEY.");
+      setError(t("Missing VITE_VAPID_PUBLIC_KEY."));
       return false;
     }
 
     setIsBusy(true);
     setError(null);
+    setStatusMessage(null);
+    setStatusMessage(null);
 
     try {
       const requestedPermission =
@@ -186,7 +199,7 @@ export const PushNotificationsProvider = ({
       setPermission(requestedPermission);
 
       if (requestedPermission !== "granted") {
-        setError("Notification permission was not granted.");
+        setError(t("Notification permission was not granted."));
         return false;
       }
 
@@ -210,14 +223,14 @@ export const PushNotificationsProvider = ({
       });
 
       if (!ok) {
-        console.error("Failed to register push subscription.", ok);
-        setError("Failed to register push subscription.");
+        setError(t("Failed to register push subscription."));
         return false;
       }
 
       setIsEnabled(true);
       setIsSubscribed(true);
       writeEnabledPreference(true);
+      setStatusMessage(t("Notifications enabled."));
       return true;
     } finally {
       setIsBusy(false);
@@ -241,6 +254,7 @@ export const PushNotificationsProvider = ({
         setIsEnabled(false);
         setIsSubscribed(false);
         writeEnabledPreference(false);
+        setStatusMessage(t("Notifications disabled."));
         return true;
       }
 
@@ -255,6 +269,7 @@ export const PushNotificationsProvider = ({
       setIsEnabled(false);
       setIsSubscribed(false);
       writeEnabledPreference(false);
+      setStatusMessage(t("Notifications disabled."));
       return true;
     } finally {
       setIsBusy(false);
@@ -268,32 +283,46 @@ export const PushNotificationsProvider = ({
   }, [disableNotifications, enableNotifications]);
 
   const sendTestNotification = useCallback(async (): Promise<boolean> => {
-    if (!supported || Notification.permission !== "granted") {
-      console.error("Failed to send test notification.", {
-        supported,
-        permission: Notification.permission,
-      });
+    setError(null);
+    setStatusMessage(null);
 
+    if (!supported) {
+      setError(t("Push is not supported in this browser."));
       return false;
     }
 
-    const registration = await getRegistration();
-    if (!registration) {
-      console.error("Failed to send test notification.", {
-        registration,
-      });
-
+    if (Notification.permission !== "granted") {
+      setError(t("Notification permission is not granted."));
       return false;
     }
 
-    await registration.showNotification("Table Tennis League", {
-      body: "Push notifications are active.",
-      tag: "ttl-test-notification",
-      data: { url: "/" },
-    });
+    try {
+      const registration = await getRegistration();
+      if (registration) {
+        await registration.showNotification("Table Tennis League", {
+          body: "Push notifications are active.",
+          tag: "ttl-test-notification",
+          data: { url: "/" },
+        });
 
-    return true;
-  }, [supported]);
+        setStatusMessage(t("Test notification sent."));
+        return true;
+      }
+
+      new Notification("Table Tennis League", {
+        body: "Push notifications are active.",
+      });
+      setStatusMessage(t("Test notification sent."));
+      return true;
+    } catch (sendError) {
+      setError(
+        t("Test notification failed. Check browser/site notification settings."),
+      );
+      // eslint-disable-next-line no-console
+      console.error(sendError);
+      return false;
+    }
+  }, [supported, t]);
 
   const enqueueMatchNotification = useCallback(
     async (input: EnqueueMatchNotificationInput): Promise<boolean> => {
@@ -335,6 +364,7 @@ export const PushNotificationsProvider = ({
       isBusy,
       hasBackgroundSync,
       error,
+      statusMessage,
       enableNotifications,
       disableNotifications,
       reSubscribe,
@@ -353,6 +383,7 @@ export const PushNotificationsProvider = ({
       permission,
       reSubscribe,
       sendTestNotification,
+      statusMessage,
       supported,
     ],
   );

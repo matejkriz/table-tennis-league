@@ -74,5 +74,14 @@
   "Enable notifications": "Zapnout notifikace",
   "Disable notifications": "Vypnout notifikace",
   "Re-subscribe": "Obnovit odběr",
-  "Send test notification": "Odeslat testovací notifikaci"
+  "Send test notification": "Odeslat testovací notifikaci",
+  "Missing VITE_VAPID_PUBLIC_KEY.": "Chybí VITE_VAPID_PUBLIC_KEY.",
+  "Notification permission was not granted.": "Oprávnění k notifikacím nebylo uděleno.",
+  "Failed to register push subscription.": "Registrace push odběru se nezdařila.",
+  "Notifications enabled.": "Notifikace byly zapnuty.",
+  "Notifications disabled.": "Notifikace byly vypnuty.",
+  "Push is not supported in this browser.": "Push není v tomto prohlížeči podporovaný.",
+  "Notification permission is not granted.": "Oprávnění k notifikacím není uděleno.",
+  "Test notification sent.": "Testovací notifikace byla odeslána.",
+  "Test notification failed. Check browser/site notification settings.": "Testovací notifikace selhala. Zkontrolujte nastavení notifikací v prohlížeči nebo na webu."
 }

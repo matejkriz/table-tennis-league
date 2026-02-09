@@ -26,6 +26,7 @@ export const PushNotificationsSection = () => {
     isBusy,
     hasBackgroundSync,
     error,
+    statusMessage,
     enableNotifications,
     disableNotifications,
     reSubscribe,
@@ -56,6 +57,7 @@ export const PushNotificationsSection = () => {
       </div>
 
       {error && <p className="text-sm text-black/60">{error}</p>}
+      {statusMessage && <p className="text-sm text-[#2F855A]">{statusMessage}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <button
