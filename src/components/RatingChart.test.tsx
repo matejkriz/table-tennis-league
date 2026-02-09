@@ -13,7 +13,7 @@ vi.mock("../evolu/client", () => ({
 }));
 
 // Mock recharts to avoid rendering issues in tests
-const mockLineChart = vi.fn();
+const { mockLineChart } = vi.hoisted(() => ({ mockLineChart: vi.fn() }));
 vi.mock("recharts", () => ({
   LineChart: mockLineChart,
   Line: () => <div data-testid="line" />,

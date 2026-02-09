@@ -7,11 +7,15 @@ vi.mock("../evolu/client", () => ({
   uiPreferencesQuery: {},
   formatTypeError: vi.fn((error) => `Error: ${error.type}`),
 }));
+vi.mock("../hooks/usePushNotifications", () => ({
+  usePushNotifications: vi.fn(),
+}));
 
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlayerId, MatchRow } from "../evolu/client";
 import { useEvolu } from "../evolu/client";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import { MatchRecorder } from "./MatchRecorder";
 import { createMockPlayer } from "../test/helpers";
 
@@ -47,12 +51,17 @@ describe("MatchRecorder", () => {
   const mockInsert = vi.fn<
     (table: string, data: unknown, options?: { onComplete?: () => void }) => InsertResult
   >(() => ({ ok: true }));
+  const mockEnqueueMatchNotification = vi.fn();
 
   beforeEach(() => {
     vi.mocked(useEvolu).mockReturnValue({
       insert: mockInsert,
     } as unknown as ReturnType<typeof useEvolu>);
+    vi.mocked(usePushNotifications).mockReturnValue({
+      enqueueMatchNotification: mockEnqueueMatchNotification,
+    } as unknown as ReturnType<typeof usePushNotifications>);
     mockInsert.mockClear();
+    mockEnqueueMatchNotification.mockClear();
   });
 
   it("should render player selects with all players", () => {
@@ -234,6 +243,38 @@ describe("MatchRecorder", () => {
     });
   });
 
+  it("should enqueue push notification after successful insert completion", async () => {
+    const user = userEvent.setup();
+    let onCompleteCallback: (() => void) | undefined;
+
+    mockInsert.mockImplementation(
+      (_table: string, _data: unknown, options?: { onComplete?: () => void }) => {
+        onCompleteCallback = options?.onComplete;
+        return { ok: true };
+      }
+    );
+
+    render(
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
+    );
+
+    const submitButton = screen.getByRole("button", { name: /record match/i });
+    await user.click(submitButton);
+
+    if (onCompleteCallback) onCompleteCallback();
+
+    await waitFor(() => {
+      expect(mockEnqueueMatchNotification).toHaveBeenCalledTimes(1);
+      expect(mockEnqueueMatchNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          playerAName: "Alice",
+          playerBName: "Bob",
+          winnerName: "Alice",
+        })
+      );
+    });
+  });
+
   it("should change player B when player A is changed to same value", async () => {
     const user = userEvent.setup();
     render(
@@ -272,6 +313,7 @@ describe("MatchRecorder", () => {
     await waitFor(() => {
       expect(screen.getByText(/Error: ValidationError/)).toBeInTheDocument();
     });
+    expect(mockEnqueueMatchNotification).not.toHaveBeenCalled();
   });
 
   it("should calculate correct delta for equal ratings", () => {

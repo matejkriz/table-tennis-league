@@ -5,6 +5,7 @@ import { AddPlayerForm } from "../components/AddPlayerForm";
 import { CollapsibleSection } from "../components/CollapsibleSection";
 import { LanguageSelector } from "../components/LanguageSelector";
 import { OwnerSection } from "../components/OwnerSection";
+import { PushNotificationsSection } from "../components/PushNotificationsSection";
 import { useLeagueData } from "../hooks/useLeagueData";
 
 const SettingsPage = () => {
@@ -41,6 +42,14 @@ const SettingsPage = () => {
           defaultOpen={true}
         >
           <OwnerSection />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          storageKey="section-settings-push"
+          title={t("Push notifications")}
+          defaultOpen={false}
+        >
+          <PushNotificationsSection />
         </CollapsibleSection>
 
         <CollapsibleSection

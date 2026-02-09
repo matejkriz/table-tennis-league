@@ -15,6 +15,9 @@ export default defineConfig({
     tailwindcss(),
     react(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       injectRegister: false,
       pwaAssets: {
@@ -30,10 +33,8 @@ export default defineConfig({
         display: "standalone",
         start_url: ".",
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,wasm}"],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
       },
       devOptions: {
         enabled: false,
