@@ -83,6 +83,8 @@ describe("notify-match handler", () => {
       },
     ]);
     vi.mocked(sendMatchPush).mockResolvedValueOnce({
+      totalSubscriptions: 1,
+      skippedSender: 0,
       attempted: 1,
       sent: 1,
       failed: 0,
@@ -145,6 +147,8 @@ describe("notify-match handler", () => {
     vi.mocked(markEventIfNew).mockResolvedValueOnce(true);
     vi.mocked(listSubscriptions).mockResolvedValueOnce([]);
     vi.mocked(sendMatchPush).mockResolvedValueOnce({
+      totalSubscriptions: 0,
+      skippedSender: 0,
       attempted: 0,
       sent: 0,
       failed: 0,

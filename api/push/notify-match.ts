@@ -73,7 +73,15 @@ export const handler = async (
 
   const isNewEvent = await markEventIfNew(body.channelId, body.eventId);
   if (!isNewEvent) {
-    response.status(200).json({ ok: true, deduped: true, attempted: 0, sent: 0 });
+    response.status(200).json({
+      ok: true,
+      deduped: true,
+      totalSubscriptions: 0,
+      skippedSender: 0,
+      attempted: 0,
+      sent: 0,
+      failed: 0,
+    });
     return;
   }
 
@@ -94,6 +102,8 @@ export const handler = async (
   response.status(200).json({
     ok: true,
     deduped: false,
+    totalSubscriptions: result.totalSubscriptions,
+    skippedSender: result.skippedSender,
     attempted: result.attempted,
     sent: result.sent,
     failed: result.failed,

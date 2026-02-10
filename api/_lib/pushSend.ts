@@ -56,6 +56,8 @@ export const sendMatchPush = async ({
   readonly senderDeviceId: string;
   readonly payload: MatchPushPayload;
 }): Promise<{
+  readonly totalSubscriptions: number;
+  readonly skippedSender: number;
   readonly attempted: number;
   readonly sent: number;
   readonly failed: number;
@@ -66,12 +68,16 @@ export const sendMatchPush = async ({
   const webPush = await getWebPush();
 
   const staleEndpoints: string[] = [];
+  let skippedSender = 0;
   let attempted = 0;
   let sent = 0;
   let failed = 0;
 
   for (const record of subscriptions) {
-    if (record.deviceId === senderDeviceId) continue;
+    if (record.deviceId === senderDeviceId) {
+      skippedSender += 1;
+      continue;
+    }
 
     attempted += 1;
 
@@ -95,6 +101,8 @@ export const sendMatchPush = async ({
   }
 
   return {
+    totalSubscriptions: subscriptions.length,
+    skippedSender,
     attempted,
     sent,
     failed,
