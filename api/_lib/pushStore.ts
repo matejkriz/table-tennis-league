@@ -10,6 +10,34 @@ const subscriptionsKey = (channelId: string): string => `push:subs:${channelId}`
 const eventKey = (channelId: string, eventId: string): string =>
   `push:event:${channelId}:${eventId}`;
 
+const parseSubscriptionRecord = (
+  value: unknown,
+): PushSubscriptionRecord | null => {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as PushSubscriptionRecord;
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof value !== "object" || value === null) return null;
+
+  const record = value as Partial<PushSubscriptionRecord>;
+  if (
+    typeof record.endpoint !== "string" ||
+    typeof record.deviceId !== "string" ||
+    typeof record.locale !== "string" ||
+    typeof record.updatedAt !== "string" ||
+    typeof record.subscription !== "object" ||
+    record.subscription === null
+  ) {
+    return null;
+  }
+
+  return record as PushSubscriptionRecord;
+};
+
 export const getChannelTokenHash = async (
   channelId: string,
 ): Promise<string | null> => {
@@ -28,7 +56,27 @@ export const upsertSubscription = async (
   channelId: string,
   record: PushSubscriptionRecord,
 ): Promise<void> => {
-  await redis.hset(subscriptionsKey(channelId), {
+  const key = subscriptionsKey(channelId);
+  const existing = await redis.hgetall<Record<string, unknown>>(key);
+
+  if (existing) {
+    const staleEndpoints = Object.entries(existing)
+      .filter(([endpoint, value]) => {
+        const parsed = parseSubscriptionRecord(value);
+        return (
+          !!parsed &&
+          parsed.deviceId === record.deviceId &&
+          endpoint !== record.endpoint
+        );
+      })
+      .map(([endpoint]) => endpoint);
+
+    if (staleEndpoints.length > 0) {
+      await Promise.all(staleEndpoints.map((endpoint) => redis.hdel(key, endpoint)));
+    }
+  }
+
+  await redis.hset(key, {
     [record.endpoint]: JSON.stringify(record),
   });
 };
@@ -48,34 +96,8 @@ export const listSubscriptions = async (
   );
   if (!fields) return [];
 
-  const toRecord = (value: unknown): PushSubscriptionRecord | null => {
-    if (typeof value === "string") {
-      try {
-        return JSON.parse(value) as PushSubscriptionRecord;
-      } catch {
-        return null;
-      }
-    }
-
-    if (typeof value !== "object" || value === null) return null;
-
-    const record = value as Partial<PushSubscriptionRecord>;
-    if (
-      typeof record.endpoint !== "string" ||
-      typeof record.deviceId !== "string" ||
-      typeof record.locale !== "string" ||
-      typeof record.updatedAt !== "string" ||
-      typeof record.subscription !== "object" ||
-      record.subscription === null
-    ) {
-      return null;
-    }
-
-    return record as PushSubscriptionRecord;
-  };
-
   return Object.values(fields)
-    .map((value) => toRecord(value))
+    .map((value) => parseSubscriptionRecord(value))
     .filter((value): value is PushSubscriptionRecord => value !== null);
 };
 
