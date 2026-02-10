@@ -10,8 +10,10 @@ Added subscription re-sync on app startup to keep backend state aligned after de
 ## Changes
 - Removed sender-side `isEnabled/isSupported` gate from `enqueueMatchNotification`.
 - Removed the same state gate from fallback queue flushing logic.
-- Added startup subscription re-sync (`subscribe` upsert) when push is enabled and permission is granted.
+- Added startup subscription re-sync (`subscribe` upsert) whenever notification permission is granted and a browser subscription exists.
 - Added `notify-match` diagnostics: `totalSubscriptions` and `skippedSender`.
+- Added `subscribe/unsubscribe` diagnostics: `subscriptionCount`.
+- Updated test notification behavior to fail clearly when no active service worker registration exists (no local fallback false-positive).
 - Removed duplicate `setStatusMessage(null)` call in enable flow.
 - Kept authentication and deduplication behavior unchanged.
 

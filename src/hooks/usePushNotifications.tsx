@@ -161,7 +161,7 @@ export const PushNotificationsProvider = ({
   }, [supported]);
 
   useEffect(() => {
-    if (!supported || !isEnabled || permission !== "granted") return;
+    if (!supported || permission !== "granted") return;
 
     const context = getContextFields();
     if (!context) return;
@@ -188,7 +188,9 @@ export const PushNotificationsProvider = ({
       });
 
       if (!cancelled && ok) {
+        setIsEnabled(true);
         setIsSubscribed(true);
+        writeEnabledPreference(true);
       }
     };
 
@@ -197,7 +199,7 @@ export const PushNotificationsProvider = ({
     return () => {
       cancelled = true;
     };
-  }, [getContextFields, isEnabled, permission, supported]);
+  }, [getContextFields, permission, supported]);
 
   useEffect(() => {
     if (hasBackgroundSync) return;
@@ -241,7 +243,10 @@ export const PushNotificationsProvider = ({
       }
 
       const registration = await getRegistration();
-      if (!registration) return false;
+      if (!registration) {
+        setError(t("Service worker is not ready. Reload and try again."));
+        return false;
+      }
 
       const existing = await registration.pushManager.getSubscription();
       const subscription =
@@ -346,11 +351,8 @@ export const PushNotificationsProvider = ({
         return true;
       }
 
-      new Notification("Table Tennis League", {
-        body: "Push notifications are active.",
-      });
-      setStatusMessage(t("Test notification sent."));
-      return true;
+      setError(t("No active service worker registration found."));
+      return false;
     } catch (sendError) {
       setError(
         t("Test notification failed. Check browser/site notification settings."),
