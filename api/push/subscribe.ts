@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 import { allowMethod, isNonEmptyString, readJsonBody } from "../_lib/http.js";
 import { verifyChannelAuth } from "../_lib/pushAuth.js";
-import { upsertSubscription } from "../_lib/pushStore.js";
+import { countSubscriptions, upsertSubscription } from "../_lib/pushStore.js";
 import type { PushSubscribeRequest } from "../_lib/pushTypes.js";
 
 const isValidRequest = (
@@ -51,7 +51,8 @@ export const handler = async (
     subscription: body.subscription,
   });
 
-  response.status(200).json({ ok: true });
+  const subscriptionCount = await countSubscriptions(body.channelId);
+  response.status(200).json({ ok: true, subscriptionCount });
 };
 
 export default handler;

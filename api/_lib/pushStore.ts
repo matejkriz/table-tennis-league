@@ -57,6 +57,11 @@ export const listSubscriptions = async (
     .filter((value): value is PushSubscriptionRecord => value !== null);
 };
 
+export const countSubscriptions = async (channelId: string): Promise<number> => {
+  const count = await redis.hlen(subscriptionsKey(channelId));
+  return typeof count === "number" ? count : Number(count) || 0;
+};
+
 export const markEventIfNew = async (
   channelId: string,
   eventId: string,
