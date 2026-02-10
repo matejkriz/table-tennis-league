@@ -16,6 +16,7 @@ On backend, Redis `hgetall` values could already be returned as deserialized obj
 - Added `subscribe/unsubscribe` diagnostics: `subscriptionCount`.
 - Updated test notification behavior to fail clearly when no active service worker registration exists (no local fallback false-positive).
 - Updated backend subscription parser to handle both JSON string values and already-deserialized object values from Redis client.
+- Added backend deduplication by `deviceId` in send path and cleanup of stale endpoints for the same `deviceId` during subscribe upsert.
 - Removed duplicate `setStatusMessage(null)` call in enable flow.
 - Kept authentication and deduplication behavior unchanged.
 

@@ -67,13 +67,21 @@ export const sendMatchPush = async ({
 
   const webPush = await getWebPush();
 
+  const latestByDeviceId = new Map<string, PushSubscriptionRecord>();
+  for (const record of subscriptions) {
+    const existing = latestByDeviceId.get(record.deviceId);
+    if (!existing || record.updatedAt > existing.updatedAt) {
+      latestByDeviceId.set(record.deviceId, record);
+    }
+  }
+
   const staleEndpoints: string[] = [];
   let skippedSender = 0;
   let attempted = 0;
   let sent = 0;
   let failed = 0;
 
-  for (const record of subscriptions) {
+  for (const record of latestByDeviceId.values()) {
     if (record.deviceId === senderDeviceId) {
       skippedSender += 1;
       continue;
@@ -101,7 +109,7 @@ export const sendMatchPush = async ({
   }
 
   return {
-    totalSubscriptions: subscriptions.length,
+    totalSubscriptions: latestByDeviceId.size,
     skippedSender,
     attempted,
     sent,
