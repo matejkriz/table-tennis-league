@@ -41,8 +41,8 @@ self.addEventListener("push", (event) => {
       body: payload.body,
       tag: payload.data.eventId,
       data: payload.data,
-      badge: "/icons/icon-192.png",
-      icon: "/icons/icon-192.png",
+      badge: "/pwa-64x64.png",
+      icon: "/pwa-192x192.png",
     }),
   );
 });
