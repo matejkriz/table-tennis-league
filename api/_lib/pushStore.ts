@@ -43,17 +43,39 @@ export const removeSubscription = async (
 export const listSubscriptions = async (
   channelId: string,
 ): Promise<ReadonlyArray<PushSubscriptionRecord>> => {
-  const fields = await redis.hgetall<Record<string, string>>(subscriptionsKey(channelId));
+  const fields = await redis.hgetall<Record<string, unknown>>(
+    subscriptionsKey(channelId),
+  );
   if (!fields) return [];
 
-  return Object.values(fields)
-    .map((value) => {
+  const toRecord = (value: unknown): PushSubscriptionRecord | null => {
+    if (typeof value === "string") {
       try {
         return JSON.parse(value) as PushSubscriptionRecord;
       } catch {
         return null;
       }
-    })
+    }
+
+    if (typeof value !== "object" || value === null) return null;
+
+    const record = value as Partial<PushSubscriptionRecord>;
+    if (
+      typeof record.endpoint !== "string" ||
+      typeof record.deviceId !== "string" ||
+      typeof record.locale !== "string" ||
+      typeof record.updatedAt !== "string" ||
+      typeof record.subscription !== "object" ||
+      record.subscription === null
+    ) {
+      return null;
+    }
+
+    return record as PushSubscriptionRecord;
+  };
+
+  return Object.values(fields)
+    .map((value) => toRecord(value))
     .filter((value): value is PushSubscriptionRecord => value !== null);
 };
 

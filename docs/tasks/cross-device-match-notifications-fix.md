@@ -6,6 +6,7 @@ Added subscription re-sync on app startup to keep backend state aligned after de
 
 ## Root cause
 `enqueueMatchNotification` was gated by sender-side `isEnabled` and `isSupported`. That prevented match event publication when recording a match on a device that did not have push enabled, even though other devices had valid subscriptions.
+On backend, Redis `hgetall` values could already be returned as deserialized objects by Upstash client, but parser expected JSON strings only and dropped all records. This produced `totalSubscriptions: 0` even when Redis hash had entries.
 
 ## Changes
 - Removed sender-side `isEnabled/isSupported` gate from `enqueueMatchNotification`.
@@ -14,6 +15,7 @@ Added subscription re-sync on app startup to keep backend state aligned after de
 - Added `notify-match` diagnostics: `totalSubscriptions` and `skippedSender`.
 - Added `subscribe/unsubscribe` diagnostics: `subscriptionCount`.
 - Updated test notification behavior to fail clearly when no active service worker registration exists (no local fallback false-positive).
+- Updated backend subscription parser to handle both JSON string values and already-deserialized object values from Redis client.
 - Removed duplicate `setStatusMessage(null)` call in enable flow.
 - Kept authentication and deduplication behavior unchanged.
 
