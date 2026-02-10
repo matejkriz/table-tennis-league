@@ -161,6 +161,45 @@ export const PushNotificationsProvider = ({
   }, [supported]);
 
   useEffect(() => {
+    if (!supported || !isEnabled || permission !== "granted") return;
+
+    const context = getContextFields();
+    if (!context) return;
+
+    let cancelled = false;
+
+    const syncSubscriptionToBackend = async (): Promise<void> => {
+      const registration = await getRegistration();
+      const subscription = await registration?.pushManager.getSubscription();
+
+      if (!subscription) {
+        if (!cancelled) {
+          setIsSubscribed(false);
+        }
+        return;
+      }
+
+      const ok = await subscribePush({
+        channelId: context.channelId,
+        authToken: context.authToken,
+        deviceId: context.deviceId,
+        locale: context.locale,
+        subscription: subscription.toJSON(),
+      });
+
+      if (!cancelled && ok) {
+        setIsSubscribed(true);
+      }
+    };
+
+    void syncSubscriptionToBackend();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [getContextFields, isEnabled, permission, supported]);
+
+  useEffect(() => {
     if (hasBackgroundSync) return;
 
     void flushFallback();
@@ -187,7 +226,6 @@ export const PushNotificationsProvider = ({
 
     setIsBusy(true);
     setError(null);
-    setStatusMessage(null);
     setStatusMessage(null);
 
     try {
