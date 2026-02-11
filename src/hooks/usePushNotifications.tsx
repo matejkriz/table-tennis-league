@@ -341,11 +341,17 @@ export const PushNotificationsProvider = ({
     try {
       const registration = await getRegistration();
       if (registration) {
-        await registration.showNotification("Table Tennis League", {
-          body: "Push notifications are active.",
-          tag: "ttl-test-notification",
-          data: { url: "/" },
-        });
+        await registration.showNotification(
+          "Table Tennis League",
+          {
+            body: "Push notifications are active.",
+            tag: "ttl-test-notification",
+            renotify: true,
+            icon: "/pwa-192x192.png",
+            badge: "/pwa-64x64.png",
+            data: { url: "/" },
+          } as NotificationOptions & { renotify: boolean },
+        );
 
         setStatusMessage(t("Test notification sent."));
         return true;
@@ -378,6 +384,10 @@ export const PushNotificationsProvider = ({
         playerAName: input.playerAName,
         playerBName: input.playerBName,
         winnerName: input.winnerName,
+        playerARating: input.playerARating,
+        playerBRating: input.playerBRating,
+        playerARank: input.playerARank,
+        playerBRank: input.playerBRank,
       };
 
       const sent = await sendEvent(event);

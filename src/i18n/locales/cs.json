@@ -33,7 +33,7 @@
   "Every match you record appears here with the STR rating changes.": "Každý zaznamenaný zápas se zde zobrazí se změnami STR ratingu.",
   "Delete this match? This will also revert rating calculations based on it.": "Smazat tento zápas? Tím se také vrátí výpočty ratingu založené na něm.",
   "Delete match": "Smazat zápas",
-  "defeated": "porazil(a)",
+  "defeated": "vítězí nad",
   "Opponent": "Soupeř",
   "Sync identity": "Synchronizace identity",
   "Guest": "Host",

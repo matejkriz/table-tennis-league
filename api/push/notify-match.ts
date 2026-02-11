@@ -28,19 +28,48 @@ const isValidRequest = (
     isNonEmptyString(body.playerAName) &&
     isNonEmptyString(body.playerBName) &&
     isNonEmptyString(body.winnerName) &&
+    typeof body.playerARating === "number" &&
+    typeof body.playerBRating === "number" &&
+    typeof body.playerARank === "number" &&
+    typeof body.playerBRank === "number" &&
+    body.playerARank >= 1 &&
+    body.playerBRank >= 1 &&
     // Validate winnerName matches one of the players (exact match)
     (body.winnerName === body.playerAName || body.winnerName === body.playerBName)
   );
 };
 
-const createPayload = (body: PushNotifyMatchRequest): MatchPushPayload => {
-  const loserName =
-    body.winnerName === body.playerAName ? body.playerBName : body.playerAName;
+const translate = (key: string, locale: string): string => {
+  const translations: Record<string, Record<string, string>> = {
+    "Satoshi's League": { en: "Satoshi's League", cs: "Satoshiho liga" },
+    defeated: { en: "defeated", cs: "poráží" },
+  };
+
+  const localeTranslations = translations[key];
+  if (!localeTranslations) return key;
+
+  return localeTranslations[locale] ?? localeTranslations.en ?? key;
+};
+
+const createPayload = (
+  body: PushNotifyMatchRequest,
+  locale: string,
+): MatchPushPayload => {
+  const isPlayerAWinner = body.winnerName === body.playerAName;
+  const winnerName = isPlayerAWinner ? body.playerAName : body.playerBName;
+  const loserName = isPlayerAWinner ? body.playerBName : body.playerAName;
+  const winnerRating = isPlayerAWinner ? body.playerARating : body.playerBRating;
+  const loserRating = isPlayerAWinner ? body.playerBRating : body.playerARating;
+  const winnerRank = isPlayerAWinner ? body.playerARank : body.playerBRank;
+  const loserRank = isPlayerAWinner ? body.playerBRank : body.playerARank;
+
+  const title = translate("Satoshi's League", locale);
+  const defeatedText = translate("defeated", locale);
 
   return {
     type: "match-played",
-    title: "Table Tennis League",
-    body: `${body.winnerName} defeated ${loserName}.`,
+    title,
+    body: `#${winnerRank} ${winnerName} (${winnerRating}) ${defeatedText} #${loserRank} ${loserName} (${loserRating})!`,
     data: {
       eventId: body.eventId,
       url: "/",
@@ -90,7 +119,7 @@ export const handler = async (
   const result = await sendMatchPush({
     subscriptions,
     senderDeviceId: body.senderDeviceId,
-    payload: createPayload(body),
+    payloadFactory: (locale: string) => createPayload(body, locale),
   });
 
   await Promise.allSettled(

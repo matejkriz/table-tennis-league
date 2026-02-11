@@ -10,12 +10,17 @@ vi.mock("../evolu/client", () => ({
 vi.mock("../hooks/usePushNotifications", () => ({
   usePushNotifications: vi.fn(),
 }));
+vi.mock("../hooks/useLeagueData", () => ({
+  useLeagueData: vi.fn(),
+  K_FACTOR: 16,
+}));
 
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlayerId, MatchRow } from "../evolu/client";
 import { useEvolu } from "../evolu/client";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+import { useLeagueData } from "../hooks/useLeagueData";
 import { MatchRecorder } from "./MatchRecorder";
 import { createMockPlayer } from "../test/helpers";
 
@@ -60,6 +65,16 @@ describe("MatchRecorder", () => {
     vi.mocked(usePushNotifications).mockReturnValue({
       enqueueMatchNotification: mockEnqueueMatchNotification,
     } as unknown as ReturnType<typeof usePushNotifications>);
+    vi.mocked(useLeagueData).mockReturnValue({
+      players: mockPlayers,
+      playersById: new Map(mockPlayers.map((p) => [p.id, p])),
+      matches: [],
+      ranking: [
+        { player: mockPlayers[1], rating: 1180, delta: -20, matchCount: 5 },
+        { player: mockPlayers[0], rating: 1050, delta: 50, matchCount: 3 },
+        { player: mockPlayers[2], rating: 850, delta: 50, matchCount: 2 },
+      ],
+    } as unknown as ReturnType<typeof useLeagueData>);
     mockInsert.mockClear();
     mockEnqueueMatchNotification.mockClear();
   });
@@ -270,6 +285,10 @@ describe("MatchRecorder", () => {
           playerAName: "Alice",
           playerBName: "Bob",
           winnerName: "Alice",
+          playerARating: expect.any(Number),
+          playerBRating: expect.any(Number),
+          playerARank: expect.any(Number),
+          playerBRank: expect.any(Number),
         })
       );
     });

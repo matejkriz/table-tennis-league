@@ -59,6 +59,10 @@ describe("notify-match handler", () => {
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Alice",
+        playerARating: 1550,
+        playerBRating: 1450,
+        playerARank: 1,
+        playerBRank: 2,
       }),
       response,
     );
@@ -104,6 +108,10 @@ describe("notify-match handler", () => {
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Alice",
+        playerARating: 1550,
+        playerBRating: 1450,
+        playerARank: 1,
+        playerBRank: 2,
       }),
       response,
     );
@@ -129,6 +137,10 @@ describe("notify-match handler", () => {
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Charlie",
+        playerARating: 1550,
+        playerBRating: 1450,
+        playerARank: 1,
+        playerBRank: 2,
       }),
       response,
     );
@@ -168,6 +180,10 @@ describe("notify-match handler", () => {
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Bob",
+        playerARating: 1550,
+        playerBRating: 1450,
+        playerARank: 1,
+        playerBRank: 2,
       }),
       response,
     );
@@ -177,5 +193,95 @@ describe("notify-match handler", () => {
     expect(response.json).toHaveBeenCalledWith(
       expect.objectContaining({ ok: true, deduped: false }),
     );
+  });
+
+  it("rejects request when rating fields are missing", async () => {
+    const response = createResponse();
+
+    await handler(
+      createRequest({
+        channelId: "channel-1",
+        authToken: "token",
+        senderDeviceId: "device-1",
+        locale: "en",
+        eventId: "evt-5",
+        playedAt: "2026-02-08T12:00:00.000Z",
+        playerAName: "Alice",
+        playerBName: "Bob",
+        winnerName: "Alice",
+        // Missing rating and rank fields
+      }),
+      response,
+    );
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({
+      ok: false,
+      error: "InvalidBody",
+    });
+  });
+
+  it("creates payload factory that generates locale-specific notifications", async () => {
+    vi.mocked(verifyChannelAuth).mockResolvedValueOnce(true);
+    vi.mocked(markEventIfNew).mockResolvedValueOnce(true);
+    vi.mocked(listSubscriptions).mockResolvedValueOnce([
+      {
+        endpoint: "endpoint-1",
+        deviceId: "device-2",
+        locale: "cs",
+        updatedAt: "2026-02-08T12:00:00.000Z",
+        subscription: { endpoint: "endpoint-1" },
+      },
+    ]);
+
+    let capturedPayloadFactory: ((locale: string) => unknown) | null = null;
+    vi.mocked(sendMatchPush).mockImplementation(async (args) => {
+      capturedPayloadFactory = args.payloadFactory as (locale: string) => unknown;
+      return {
+        totalSubscriptions: 1,
+        skippedSender: 0,
+        attempted: 1,
+        sent: 1,
+        failed: 0,
+        staleEndpoints: [],
+      };
+    });
+
+    const response = createResponse();
+
+    await handler(
+      createRequest({
+        channelId: "channel-1",
+        authToken: "token",
+        senderDeviceId: "device-1",
+        locale: "en",
+        eventId: "evt-6",
+        playedAt: "2026-02-08T12:00:00.000Z",
+        playerAName: "Alice",
+        playerBName: "Bob",
+        winnerName: "Alice",
+        playerARating: 1550,
+        playerBRating: 1450,
+        playerARank: 1,
+        playerBRank: 2,
+      }),
+      response,
+    );
+
+    expect(capturedPayloadFactory).not.toBeNull();
+    if (capturedPayloadFactory) {
+      const enPayload = capturedPayloadFactory("en") as { title: string; body: string };
+      const csPayload = capturedPayloadFactory("cs") as { title: string; body: string };
+
+      expect(enPayload.title).toBe("Satoshi's League");
+      expect(enPayload.body).toContain("defeated");
+      expect(enPayload.body).toContain("#1 Alice (1550)");
+      expect(enPayload.body).toContain("#2 Bob (1450)");
+
+      expect(csPayload.title).toBe("Satoshiho liga");
+      expect(csPayload.body).toContain("poráží");
+      expect(csPayload.body).toContain("#1 Alice (1550)");
+      expect(csPayload.body).toContain("#2 Bob (1450)");
+    }
   });
 });

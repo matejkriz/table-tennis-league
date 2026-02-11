@@ -34,6 +34,10 @@ const createEvent = (eventId: string): MatchPushEvent => ({
   playerAName: "Alice",
   playerBName: "Bob",
   winnerName: "Alice",
+  playerARating: 1508,
+  playerBRating: 1492,
+  playerARank: 1,
+  playerBRank: 2,
 });
 
 describe("fallback push queue", () => {
