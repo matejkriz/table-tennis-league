@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
-import { K_FACTOR } from "../hooks/useLeagueData";
+import { K_FACTOR, useLeagueData } from "../hooks/useLeagueData";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { RatingChart } from "./RatingChart";
@@ -27,6 +27,7 @@ export const MatchRecorder = ({
   const { t } = useTranslation();
   const { insert } = useEvolu();
   const { enqueueMatchNotification } = usePushNotifications();
+  const leagueData = useLeagueData();
   const [playerAId, setPlayerAId] = useState<PlayerId | "">(
     players[0]?.id ?? "",
   );
@@ -103,6 +104,32 @@ export const MatchRecorder = ({
     const playerA = playerAId ? playersById.get(playerAId) : undefined;
     const playerB = playerBId ? playersById.get(playerBId) : undefined;
 
+    // Calculate projected ratings and rankings after the match
+    const ratingA = currentRatings.get(playerAId) ?? 0;
+    const ratingB = currentRatings.get(playerBId) ?? 0;
+    const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+    const expectedB = 1 - expectedA;
+    const actualA = winnerId === playerAId ? 1 : 0;
+    const actualB = 1 - actualA;
+    const projectedRatingA = ratingA + K_FACTOR * (actualA - expectedA);
+    const projectedRatingB = ratingB + K_FACTOR * (actualB - expectedB);
+
+    // Calculate projected rankings based on new ratings
+    const projectedRankings = [...leagueData.ranking]
+      .map((entry) => {
+        if (entry.player.id === playerAId) {
+          return { ...entry, rating: projectedRatingA };
+        }
+        if (entry.player.id === playerBId) {
+          return { ...entry, rating: projectedRatingB };
+        }
+        return entry;
+      })
+      .sort((a, b) => b.rating - a.rating || a.player.name.localeCompare(b.player.name));
+
+    const playerARank = projectedRankings.findIndex((entry) => entry.player.id === playerAId) + 1;
+    const playerBRank = projectedRankings.findIndex((entry) => entry.player.id === playerBId) + 1;
+
     const insertResult = insert(
       "match",
       {
@@ -122,6 +149,10 @@ export const MatchRecorder = ({
             playerAName: playerA.name,
             playerBName: playerB.name,
             winnerName: winner.name,
+            playerARating: Math.round(projectedRatingA),
+            playerBRating: Math.round(projectedRatingB),
+            playerARank,
+            playerBRank,
           });
         },
       },

@@ -37,13 +37,17 @@ self.addEventListener("push", (event) => {
   })();
 
   event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      tag: payload.data.eventId,
-      data: payload.data,
-      badge: "/pwa-64x64.png",
-      icon: "/pwa-192x192.png",
-    }),
+    self.registration.showNotification(
+      payload.title,
+      {
+        body: payload.body,
+        tag: payload.data.eventId,
+        renotify: true,
+        data: payload.data,
+        badge: "/pwa-64x64.png",
+        icon: "/pwa-192x192.png",
+      } as NotificationOptions & { renotify: boolean },
+    ),
   );
 });
 

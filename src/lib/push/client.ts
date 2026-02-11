@@ -46,6 +46,10 @@ const toNotifyRequest = (event: MatchPushEvent): PushNotifyMatchRequest => ({
   playerAName: event.playerAName,
   playerBName: event.playerBName,
   winnerName: event.winnerName,
+  playerARating: event.playerARating,
+  playerBRating: event.playerBRating,
+  playerARank: event.playerARank,
+  playerBRank: event.playerBRank,
 });
 
 export const isPushSupported = (): boolean =>

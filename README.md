@@ -92,13 +92,13 @@ This app uses the STR (Skill-based Team Ranking) system based on Elo rating calc
 
 2. **Expected Score Calculation**: Before each match, the system calculates the expected probability of each player winning using the Elo formula:
 
-   ```
+   ```text
    Expected Score = 1 / (1 + 10^((Opponent Rating - Player Rating) / 400))
    ```
 
 3. **Rating Update**: After a match, both players' ratings are updated based on the actual outcome:
 
-   ```
+   ```text
    New Rating = Old Rating + K × (Actual Score - Expected Score)
    ```
 

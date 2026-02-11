@@ -50,11 +50,11 @@ const configureWebPush = async (): Promise<void> => {
 export const sendMatchPush = async ({
   subscriptions,
   senderDeviceId,
-  payload,
+  payloadFactory,
 }: {
   readonly subscriptions: ReadonlyArray<PushSubscriptionRecord>;
   readonly senderDeviceId: string;
-  readonly payload: MatchPushPayload;
+  readonly payloadFactory: (locale: string) => MatchPushPayload;
 }): Promise<{
   readonly totalSubscriptions: number;
   readonly skippedSender: number;
@@ -81,8 +81,12 @@ export const sendMatchPush = async ({
   let sent = 0;
   let failed = 0;
 
+  // When only the sender device is subscribed, send to it anyway
+  // so single-device setups can verify push notifications work end-to-end.
+  const skipSender = latestByDeviceId.size > 1;
+
   for (const record of latestByDeviceId.values()) {
-    if (record.deviceId === senderDeviceId) {
+    if (skipSender && record.deviceId === senderDeviceId) {
       skippedSender += 1;
       continue;
     }
@@ -90,6 +94,7 @@ export const sendMatchPush = async ({
     attempted += 1;
 
     try {
+      const payload = payloadFactory(record.locale);
       await webPush.sendNotification(record.subscription, JSON.stringify(payload));
       sent += 1;
     } catch (error) {

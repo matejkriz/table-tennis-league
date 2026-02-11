@@ -39,6 +39,10 @@ export interface PushNotifyMatchRequest {
   readonly playerAName: string;
   readonly playerBName: string;
   readonly winnerName: string;
+  readonly playerARating: number;
+  readonly playerBRating: number;
+  readonly playerARank: number;
+  readonly playerBRank: number;
 }
 
 export interface MatchPushPayload {
