@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { allowMethod, isNonEmptyString, readJsonBody } from "../_lib/http.js";
 import { verifyChannelAuth } from "../_lib/pushAuth.js";
 import {
+  clearEventMark,
   listSubscriptions,
   markEventIfNew,
   removeSubscription,
@@ -42,7 +43,7 @@ const isValidRequest = (
 const translate = (key: string, locale: string): string => {
   const translations: Record<string, Record<string, string>> = {
     "Satoshi's League": { en: "Satoshi's League", cs: "Satoshiho liga" },
-    defeated: { en: "defeated", cs: "poráží" },
+    defeated: { en: "defeated", cs: "vítězí nad" },
   };
 
   const localeTranslations = translations[key];
@@ -114,13 +115,20 @@ export const handler = async (
     return;
   }
 
-  const subscriptions = await listSubscriptions(body.channelId);
+  let result;
+  try {
+    const subscriptions = await listSubscriptions(body.channelId);
 
-  const result = await sendMatchPush({
-    subscriptions,
-    senderDeviceId: body.senderDeviceId,
-    payloadFactory: (locale: string) => createPayload(body, locale),
-  });
+    result = await sendMatchPush({
+      subscriptions,
+      senderDeviceId: body.senderDeviceId,
+      payloadFactory: (locale: string) => createPayload(body, locale),
+    });
+  } catch (error) {
+    // Delivery failed — clear the dedupe mark so retries are not lost.
+    await clearEventMark(body.channelId, body.eventId);
+    throw error;
+  }
 
   await Promise.allSettled(
     result.staleEndpoints.map((endpoint) =>

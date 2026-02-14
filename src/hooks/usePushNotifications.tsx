@@ -130,13 +130,11 @@ export const PushNotificationsProvider = ({
   );
 
   const flushFallback = useCallback(async (): Promise<void> => {
-    if (hasBackgroundSync) return;
-
     await flushFallbackQueue({
       storage: window.localStorage,
       send: sendEvent,
     });
-  }, [hasBackgroundSync, sendEvent]);
+  }, [sendEvent]);
 
   useEffect(() => {
     if (!appOwner?.mnemonic) {
@@ -202,8 +200,6 @@ export const PushNotificationsProvider = ({
   }, [getContextFields, permission, supported]);
 
   useEffect(() => {
-    if (hasBackgroundSync) return;
-
     void flushFallback();
 
     const handleOnline = () => {
@@ -212,7 +208,7 @@ export const PushNotificationsProvider = ({
 
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [flushFallback, hasBackgroundSync]);
+  }, [flushFallback]);
 
   const enableNotifications = useCallback(async (): Promise<boolean> => {
     if (!supported) return false;
@@ -393,13 +389,19 @@ export const PushNotificationsProvider = ({
       const sent = await sendEvent(event);
       if (sent) return true;
 
-      if (!hasBackgroundSync) {
-        enqueueFallbackQueueItem(window.localStorage, event);
-      }
+      // Defensively enqueue to localStorage fallback queue so the event is not
+      // lost even when Background Sync is available but its registration fails
+      // or never triggers.  Server-side dedup (via eventId) prevents duplicates.
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[push] sendEvent failed; enqueuing to fallback queue",
+        event.eventId,
+      );
+      enqueueFallbackQueueItem(window.localStorage, event);
 
       return false;
     },
-    [getContextFields, hasBackgroundSync, sendEvent],
+    [getContextFields, sendEvent],
   );
 
   const contextValue = useMemo<PushNotificationsContextValue>(
