@@ -117,3 +117,11 @@ export const markEventIfNew = async (
 
   return result === "OK";
 };
+
+/** Remove the dedupe mark so the event can be retried. */
+export const clearEventMark = async (
+  channelId: string,
+  eventId: string,
+): Promise<void> => {
+  await redis.del(eventKey(channelId, eventId));
+};
