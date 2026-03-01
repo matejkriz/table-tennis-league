@@ -299,6 +299,7 @@ describe("MatchRecorder", () => {
           playerBRank: expect.any(Number),
         })
       );
+      expect(screen.getByText("Match recorded.")).toBeInTheDocument();
     });
   });
 
@@ -410,6 +411,7 @@ describe("MatchRecorder", () => {
       expect(screen.getByText(/Error: ValidationError/)).toBeInTheDocument();
     });
     expect(mockEnqueueMatchNotification).not.toHaveBeenCalled();
+    expect(screen.queryByText("Match recorded.")).not.toBeInTheDocument();
   });
 
   it("should calculate correct delta for equal ratings", () => {

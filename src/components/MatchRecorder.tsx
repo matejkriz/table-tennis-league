@@ -1,6 +1,6 @@
 import * as Evolu from "@evolu/common";
 import { IconMoodSad, IconTrophy } from "@tabler/icons-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
@@ -88,6 +88,15 @@ export const MatchRecorder = ({
   const [winnerTeam, setWinnerTeam] = useState<WinnerTeam | null>("A");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!successToast) return;
+    const timeoutId = window.setTimeout(() => {
+      setSuccessToast(null);
+    }, 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [successToast]);
 
   const playersById = useMemo(() => {
     const map = new Map<PlayerId, PlayerRow>();
@@ -308,6 +317,7 @@ export const MatchRecorder = ({
       {
         onComplete: () => {
           resetForm();
+          setSuccessToast(t("Match recorded."));
 
           void enqueueMatchNotification({
             playedAt: playedAtResult.value,
@@ -557,6 +567,14 @@ export const MatchRecorder = ({
           >
             {t("Record match")}
           </button>
+        </div>
+      )}
+
+      {successToast && (
+        <div aria-live="polite" className="pointer-events-none fixed left-4 top-4 z-50">
+          <div className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black shadow-lg">
+            {successToast}
+          </div>
         </div>
       )}
     </form>
