@@ -1,6 +1,8 @@
-- [x] Remove `(čtyřhra)` from English UI labels while keeping Czech wording in translations.
-- [x] Remove the extra doubles settings helper label about sync.
-- [x] Update locale keys to match new English source strings.
-- [x] Run `yarn typecheck`.
-- [x] Manually verify Settings wording in the browser and capture updated walkthrough artifacts.
-- [x] Update docs (`docs/tasks/doubles-mode.md`, `docs/LESSONS.md`) and commit/push.
+- [x] Add and maintain checklist for upset pixelart task.
+- [x] Add failing tests for upset-only pixelart behavior in `MatchRecorder`.
+- [x] Implement `MatchUpsetPixelArt` component (cute retro pixel animation).
+- [x] Replace `Projected change` block in `MatchRecorder` with upset animation.
+- [x] Add i18n keys for new animation copy in `cs.json`.
+- [x] Update tests and verify they pass.
+- [x] Run typecheck and lint checks for changed files.
+- [x] Document result in `docs/tasks/match-upset-pixelart.md`.
