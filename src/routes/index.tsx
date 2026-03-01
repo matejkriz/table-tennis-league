@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CollapsibleSection } from "../components/CollapsibleSection";
@@ -8,10 +8,16 @@ import { MatchRecorder } from "../components/MatchRecorder";
 import { RankingList } from "../components/RankingList";
 import type { PlayerId } from "../evolu/client";
 import { useLeagueData } from "../hooks/useLeagueData";
+import { shouldRedirectRootToStart } from "../utils/startAccess";
 
 const MatchPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { players, ranking, matches } = useLeagueData();
+  const shouldRedirectToStart = shouldRedirectRootToStart({
+    matchCount: matches.length,
+    playerCount: players.length,
+  });
 
   const ratingMap = useMemo(() => {
     const map = new Map<PlayerId, number>();
@@ -20,6 +26,16 @@ const MatchPage = () => {
     });
     return map;
   }, [ranking]);
+
+  useEffect(() => {
+    if (shouldRedirectToStart) {
+      void navigate({ to: "/start" });
+    }
+  }, [navigate, shouldRedirectToStart]);
+
+  if (shouldRedirectToStart) {
+    return null;
+  }
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-40 sm:px-6 sm:py-8 md:pb-8 md:pt-20">

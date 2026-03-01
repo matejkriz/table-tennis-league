@@ -16,6 +16,9 @@ export type MatchId = typeof MatchId.Type;
 export const UiPreferenceId = Evolu.id("UiPreference");
 export type UiPreferenceId = typeof UiPreferenceId.Type;
 
+export const LeagueSettingId = Evolu.id("LeagueSetting");
+export type LeagueSettingId = typeof LeagueSettingId.Type;
+
 const Schema = {
   player: {
     id: PlayerId,
@@ -29,6 +32,11 @@ const Schema = {
     winnerId: PlayerId,
     playedAt: Evolu.DateIso,
     note: Evolu.nullOr(Evolu.NonEmptyTrimmedString1000),
+  },
+  leagueSetting: {
+    id: LeagueSettingId,
+    key: Evolu.NonEmptyTrimmedString100,
+    value: Evolu.nullOr(Evolu.NonEmptyTrimmedString100),
   },
   // Underscore prefix = local-only, not synced across devices
   _uiPreference: {
@@ -167,6 +175,17 @@ export const matchesQuery = evolu.createQuery((db) =>
 );
 
 export type MatchRow = typeof matchesQuery.Row;
+
+export const leagueSettingsQuery = evolu.createQuery((db) =>
+  db
+    .selectFrom("leagueSetting")
+    .select(["id", "key", "value"])
+    .where("isDeleted", "is not", Evolu.sqliteTrue)
+    .where("key", "is not", null)
+    .$narrowType<{ key: Evolu.kysely.NotNull }>()
+);
+
+export type LeagueSettingRow = typeof leagueSettingsQuery.Row;
 
 export const uiPreferencesQuery = evolu.createQuery((db) =>
   db
