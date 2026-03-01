@@ -32,7 +32,7 @@ const StatsPage = () => {
           defaultOpen={true}
           headerRight={t("STR")}
         >
-          <RankingList ranking={ranking} />
+          <RankingList ranking={ranking} matches={matches} />
         </CollapsibleSection>
 
         <CollapsibleSection

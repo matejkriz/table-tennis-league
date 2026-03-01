@@ -90,7 +90,7 @@ const MatchPage = () => {
           defaultOpen={false}
           headerRight={t("STR")}
         >
-          <RankingList ranking={ranking} />
+          <RankingList ranking={ranking} matches={matches} />
         </CollapsibleSection>
       </div>
     </div>
