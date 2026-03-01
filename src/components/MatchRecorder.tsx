@@ -85,7 +85,7 @@ export const MatchRecorder = ({
   );
   const [playerA2Id, setPlayerA2Id] = useState<PlayerId | "">("");
   const [playerB2Id, setPlayerB2Id] = useState<PlayerId | "">("");
-  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam>("A");
+  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam | null>("A");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -133,8 +133,29 @@ export const MatchRecorder = ({
     return { teamAPlayerIds, teamBPlayerIds };
   }, [isDoublesMode, playerA2Id, playerAId, playerB2Id, playerBId]);
 
-  const preview = useMemo(() => {
+  const teamLabels = useMemo(() => {
     if (!teamSelection) {
+      return null;
+    }
+
+    const teamALabel = teamSelection.teamAPlayerIds
+      .map((id) => playersById.get(id)?.name)
+      .filter((name): name is PlayerRow["name"] => name != null)
+      .join(" + ");
+    const teamBLabel = teamSelection.teamBPlayerIds
+      .map((id) => playersById.get(id)?.name)
+      .filter((name): name is PlayerRow["name"] => name != null)
+      .join(" + ");
+
+    if (!teamALabel || !teamBLabel) {
+      return null;
+    }
+
+    return { teamALabel, teamBLabel };
+  }, [playersById, teamSelection]);
+
+  const preview = useMemo(() => {
+    if (!teamSelection || winnerTeam == null || !teamLabels) {
       return null;
     }
 
@@ -184,28 +205,19 @@ export const MatchRecorder = ({
       return null;
     }
 
-    const teamALabel = participants
-      .filter((entry) => entry.team === "A")
-      .map((entry) => entry.player.name)
-      .join(" + ");
-    const teamBLabel = participants
-      .filter((entry) => entry.team === "B")
-      .map((entry) => entry.player.name)
-      .join(" + ");
-
     return {
       ...ratingResult,
       participants,
-      teamALabel,
-      teamBLabel,
+      ...teamLabels,
       teamAPlayerIds: teamSelection.teamAPlayerIds,
       teamBPlayerIds: teamSelection.teamBPlayerIds,
     };
-  }, [currentRatings, playersById, teamSelection, winnerTeam]);
+  }, [currentRatings, playersById, teamLabels, teamSelection, winnerTeam]);
 
   const resetForm = () => {
     setNote("");
     setError(null);
+    setWinnerTeam(null);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -384,7 +396,7 @@ export const MatchRecorder = ({
         </div>
       )}
 
-      {preview && (
+      {teamLabels && (
         <div className="border-t border-black/10 pt-5">
           <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
             {t("Winner")}
@@ -393,19 +405,19 @@ export const MatchRecorder = ({
             {[
               {
                 id: "A" as const,
-                label: preview.teamALabel,
+                label: teamLabels.teamALabel,
                 color: PLAYER_A_COLOR,
               },
               {
                 id: "B" as const,
-                label: preview.teamBLabel,
+                label: teamLabels.teamBLabel,
                 color: PLAYER_B_COLOR,
               },
             ]
               .map((item) => {
                 const color = item.color;
                 const isSelected = winnerTeam === item.id;
-                const isLoser = winnerTeam !== item.id;
+                const isLoser = winnerTeam !== null && winnerTeam !== item.id;
 
                 // Inline styles for dynamic colors
                 const selectedStyles = isSelected
@@ -504,7 +516,13 @@ export const MatchRecorder = ({
             currentRatings={currentRatings}
             projectedDeltaA={preview?.teamDeltaA ?? 0}
             projectedDeltaB={preview?.teamDeltaB ?? 0}
-            winnerId={winnerTeam === "A" ? playerAId : playerBId}
+            winnerId={
+              winnerTeam === "A"
+                ? playerAId
+                : winnerTeam === "B"
+                  ? playerBId
+                  : ""
+            }
           />
         </CollapsibleSection>
       )}

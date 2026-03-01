@@ -261,7 +261,7 @@ describe("MatchRecorder", () => {
     }
 
     await waitFor(() => {
-      expect(noteInput).toHaveValue("");
+      expect(screen.queryByRole("button", { name: /record match/i })).not.toBeInTheDocument();
     });
   });
 
