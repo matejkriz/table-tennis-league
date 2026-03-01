@@ -159,15 +159,23 @@ describe("MatchRecorder", () => {
     });
   });
 
-  it("should show projected rating changes", () => {
+  it("should show upset replay when lower-rated side is selected as winner", () => {
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
-    expect(screen.getByText("Projected change")).toBeInTheDocument();
-    // Should show current ratings and deltas
-    expect(screen.getByText(/1050/)).toBeInTheDocument(); // Alice's rating
-    expect(screen.getByText(/1180/)).toBeInTheDocument(); // Bob's rating
+    expect(screen.queryByText("Projected change")).not.toBeInTheDocument();
+    expect(screen.getByText("Upset replay")).toBeInTheDocument();
+  });
+
+  it("should hide upset replay when stronger side is selected as winner", async () => {
+    const user = userEvent.setup();
+    render(
+      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
+    );
+
+    await user.click(screen.getByRole("button", { name: /bob/i }));
+    expect(screen.queryByText("Upset replay")).not.toBeInTheDocument();
   });
 
   it("should submit match with correct data", async () => {
@@ -414,7 +422,7 @@ describe("MatchRecorder", () => {
     expect(screen.queryByText("Match recorded.")).not.toBeInTheDocument();
   });
 
-  it("should calculate correct delta for equal ratings", () => {
+  it("should not render upset replay for equal ratings", () => {
     const equalRatingsMap = new Map<PlayerId, number>([
       ["player1" as PlayerId, 1000],
       ["player2" as PlayerId, 1000],
@@ -424,11 +432,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers.slice(0, 2)} currentRatings={equalRatingsMap} matches={mockMatches} />
     );
 
-    // For equal ratings, expected score is 0.5 for each
-    // Winner gets: 16 * (1 - 0.5) = +8
-    // Loser gets: 16 * (0 - 0.5) = -8
-    expect(screen.getByText(/\+8\.0/)).toBeInTheDocument();
-    expect(screen.getByText(/-8\.0/)).toBeInTheDocument();
+    expect(screen.queryByText("Upset replay")).not.toBeInTheDocument();
   });
 
   it("should show winner label on selected winner button", () => {

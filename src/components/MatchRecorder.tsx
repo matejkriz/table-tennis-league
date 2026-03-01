@@ -12,6 +12,7 @@ import {
   type WinnerTeam,
 } from "../utils/matchRating";
 import { CollapsibleSection } from "./CollapsibleSection";
+import { MatchUpsetPixelArt } from "./MatchUpsetPixelArt";
 import { RatingChart } from "./RatingChart";
 
 const PLAYER_A_COLOR = "#F7931A";
@@ -222,6 +223,19 @@ export const MatchRecorder = ({
       teamBPlayerIds: teamSelection.teamBPlayerIds,
     };
   }, [currentRatings, playersById, teamLabels, teamSelection, winnerTeam]);
+
+  const upsetPreview = useMemo(() => {
+    if (!preview || winnerTeam == null) return null;
+    const winnerAverage = winnerTeam === "A" ? preview.teamAverageA : preview.teamAverageB;
+    const loserAverage = winnerTeam === "A" ? preview.teamAverageB : preview.teamAverageA;
+
+    if (winnerAverage >= loserAverage) return null;
+
+    return {
+      winnerLabel: winnerTeam === "A" ? preview.teamALabel : preview.teamBLabel,
+      loserLabel: winnerTeam === "A" ? preview.teamBLabel : preview.teamALabel,
+    };
+  }, [preview, winnerTeam]);
 
   const resetForm = () => {
     setNote("");
@@ -537,24 +551,11 @@ export const MatchRecorder = ({
         </CollapsibleSection>
       )}
 
-      {preview && (
-        <div className="rounded border border-black/10 bg-black/5 p-4 text-sm">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-black/60">
-            {t("Projected change")}
-          </p>
-          <div className="space-y-2 font-mono text-xs text-black/80">
-            {preview.participants.map((participant) => (
-              <p key={participant.id}>
-                {participant.player.name}:{" "}
-                <span className={participant.delta > 0 ? "text-[#F7931A]" : ""}>
-                  {formatDelta(participant.delta)}
-                </span>{" "}
-                ({participant.ratingBefore.toFixed(1)} →{" "}
-                {participant.ratingAfter.toFixed(1)})
-              </p>
-            ))}
-          </div>
-        </div>
+      {upsetPreview && (
+        <MatchUpsetPixelArt
+          winnerLabel={upsetPreview.winnerLabel}
+          loserLabel={upsetPreview.loserLabel}
+        />
       )}
 
       {error && <p className="text-sm text-black/60">{error}</p>}
@@ -579,10 +580,4 @@ export const MatchRecorder = ({
       )}
     </form>
   );
-};
-
-const formatDelta = (delta: number): string => {
-  if (Number.isNaN(delta)) return "+0.0";
-  const sign = delta >= 0 ? "+" : "";
-  return `${sign}${delta.toFixed(1)}`;
 };
