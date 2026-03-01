@@ -13,4 +13,4 @@
 - [x] Update relevant tests (`useLeagueData`, `MatchRecorder`) and translation strings.
 - [x] Run validation: targeted tests + `yarn typecheck`.
 - [x] Perform manual UI test and capture a demo video artifact.
-- [ ] Stage, commit, and push all changes.
+- [x] Stage, commit, and push all changes.
