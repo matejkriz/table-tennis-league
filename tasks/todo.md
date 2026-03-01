@@ -1,9 +1,6 @@
-- [x] Keep singles recorder section always visible on main page.
-- [x] Show doubles recorder as an additional section below singles only when doubles setting is enabled.
-- [x] Refactor `MatchRecorder` to support explicit mode (`singles`/`doubles`) without replacing singles behavior.
-- [x] Redesign doubles player selection into two team columns with no horizontal row separator.
-- [x] Add visual team separation with vertical divider on desktop and mobile-friendly stacked layout.
-- [x] Update tests impacted by recorder mode and layout changes.
-- [x] Run validation (`vitest` focused + `yarn typecheck`).
-- [x] Manually verify UI and record updated walkthrough artifact.
-- [x] Update docs (`docs/tasks/doubles-mode.md`, `docs/LESSONS.md`) and finish with commit/push.
+- [x] Add explicit `isDoubles` flag to push notification payload contracts (frontend + API types).
+- [x] Include `isDoubles` in match notification enqueue calls from `MatchRecorder`.
+- [x] Update notify-match API validation/payload formatting for doubles notification text with team names.
+- [x] Add/adjust tests to prove doubles push notifications are accepted and include all names.
+- [x] Run focused tests + `yarn typecheck`.
+- [x] Update docs and commit/push.

@@ -31,6 +31,7 @@ const createEvent = (eventId: string): MatchPushEvent => ({
   locale: "en",
   eventId,
   playedAt: "2026-02-08T12:00:00.000Z",
+  isDoubles: false,
   playerAName: "Alice",
   playerBName: "Bob",
   winnerName: "Alice",

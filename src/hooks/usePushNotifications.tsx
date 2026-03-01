@@ -377,6 +377,7 @@ export const PushNotificationsProvider = ({
         locale: context.locale,
         eventId: createPushEventId(),
         playedAt: input.playedAt,
+        isDoubles: input.isDoubles,
         playerAName: input.playerAName,
         playerBName: input.playerBName,
         winnerName: input.winnerName,

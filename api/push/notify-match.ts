@@ -26,6 +26,7 @@ const isValidRequest = (
     isNonEmptyString(body.locale) &&
     isNonEmptyString(body.eventId) &&
     isNonEmptyString(body.playedAt) &&
+    typeof body.isDoubles === "boolean" &&
     isNonEmptyString(body.playerAName) &&
     isNonEmptyString(body.playerBName) &&
     isNonEmptyString(body.winnerName) &&
@@ -43,6 +44,7 @@ const isValidRequest = (
 const translate = (key: string, locale: string): string => {
   const translations: Record<string, Record<string, string>> = {
     "Satoshi's League": { en: "Satoshi's League", cs: "Satoshiho liga" },
+    Doubles: { en: "Doubles", cs: "Čtyřhra" },
     defeated: { en: "defeated", cs: "vítězí nad" },
   };
 
@@ -66,11 +68,14 @@ const createPayload = (
 
   const title = translate("Satoshi's League", locale);
   const defeatedText = translate("defeated", locale);
+  const matchPrefix = body.isDoubles
+    ? `${translate("Doubles", locale)}: `
+    : "";
 
   return {
     type: "match-played",
     title,
-    body: `#${winnerRank} ${winnerName} (${winnerRating}) ${defeatedText} #${loserRank} ${loserName} (${loserRating})!`,
+    body: `${matchPrefix}#${winnerRank} ${winnerName} (${winnerRating}) ${defeatedText} #${loserRank} ${loserName} (${loserRating})!`,
     data: {
       eventId: body.eventId,
       url: "/",

@@ -257,6 +257,7 @@ export const MatchRecorder = ({
 
           void enqueueMatchNotification({
             playedAt: playedAtResult.value,
+            isDoubles: isDoublesMode,
             playerAName: preview.teamALabel,
             playerBName: preview.teamBLabel,
             winnerName: winnerLabel,

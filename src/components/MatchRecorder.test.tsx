@@ -282,6 +282,7 @@ describe("MatchRecorder", () => {
       expect(mockEnqueueMatchNotification).toHaveBeenCalledTimes(1);
       expect(mockEnqueueMatchNotification).toHaveBeenCalledWith(
         expect.objectContaining({
+          isDoubles: false,
           playerAName: "Alice",
           playerBName: "Bob",
           winnerName: "Alice",
@@ -326,6 +327,45 @@ describe("MatchRecorder", () => {
       }),
       expect.any(Object),
     );
+  });
+
+  it("should enqueue doubles push notification with all team names", async () => {
+    const user = userEvent.setup();
+    let onCompleteCallback: (() => void) | undefined;
+
+    mockInsert.mockImplementation(
+      (_table: string, _data: unknown, options?: { onComplete?: () => void }) => {
+        onCompleteCallback = options?.onComplete;
+        return { ok: true };
+      },
+    );
+
+    render(
+      <MatchRecorder
+        players={mockPlayers}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        mode="doubles"
+      />
+    );
+
+    await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
+    await user.selectOptions(screen.getByLabelText(/team b - player 2/i), "player4");
+    await user.click(screen.getByRole("button", { name: /bob \+ dana/i }));
+    await user.click(screen.getByRole("button", { name: /record match/i }));
+
+    if (onCompleteCallback) onCompleteCallback();
+
+    await waitFor(() => {
+      expect(mockEnqueueMatchNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isDoubles: true,
+          playerAName: "Alice + Charlie",
+          playerBName: "Bob + Dana",
+          winnerName: "Bob + Dana",
+        }),
+      );
+    });
   });
 
   it("should show team column layout in doubles mode", () => {

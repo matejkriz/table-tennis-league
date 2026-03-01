@@ -43,6 +43,7 @@ const toNotifyRequest = (event: MatchPushEvent): PushNotifyMatchRequest => ({
   locale: event.locale,
   eventId: event.eventId,
   playedAt: event.playedAt,
+  isDoubles: event.isDoubles,
   playerAName: event.playerAName,
   playerBName: event.playerBName,
   winnerName: event.winnerName,

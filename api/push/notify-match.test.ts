@@ -58,6 +58,7 @@ describe("notify-match handler", () => {
         locale: "en",
         eventId: "evt-1",
         playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: false,
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Alice",
@@ -107,6 +108,7 @@ describe("notify-match handler", () => {
         locale: "en",
         eventId: "evt-2",
         playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: false,
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Alice",
@@ -136,6 +138,7 @@ describe("notify-match handler", () => {
         locale: "en",
         eventId: "evt-3",
         playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: false,
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Charlie",
@@ -179,6 +182,7 @@ describe("notify-match handler", () => {
         locale: "en",
         eventId: "evt-4",
         playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: false,
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Bob",
@@ -208,6 +212,7 @@ describe("notify-match handler", () => {
         locale: "en",
         eventId: "evt-5",
         playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: false,
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Alice",
@@ -259,6 +264,7 @@ describe("notify-match handler", () => {
         locale: "en",
         eventId: "evt-6",
         playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: false,
         playerAName: "Alice",
         playerBName: "Bob",
         winnerName: "Alice",
@@ -284,6 +290,68 @@ describe("notify-match handler", () => {
       expect(csPayload.body).toContain("vítězí nad");
       expect(csPayload.body).toContain("#1 Alice (1550)");
       expect(csPayload.body).toContain("#2 Bob (1450)");
+    }
+  });
+
+  it("creates doubles payload with both team names", async () => {
+    vi.mocked(verifyChannelAuth).mockResolvedValueOnce(true);
+    vi.mocked(markEventIfNew).mockResolvedValueOnce(true);
+    vi.mocked(listSubscriptions).mockResolvedValueOnce([
+      {
+        endpoint: "endpoint-1",
+        deviceId: "device-2",
+        locale: "en",
+        updatedAt: "2026-02-08T12:00:00.000Z",
+        subscription: { endpoint: "endpoint-1" },
+      },
+    ]);
+
+    let capturedPayloadFactory: ((locale: string) => unknown) | null = null;
+    vi.mocked(sendMatchPush).mockImplementation(async (args) => {
+      capturedPayloadFactory = args.payloadFactory as (locale: string) => unknown;
+      return {
+        totalSubscriptions: 1,
+        skippedSender: 0,
+        attempted: 1,
+        sent: 1,
+        failed: 0,
+        staleEndpoints: [],
+      };
+    });
+
+    const response = createResponse();
+
+    await handler(
+      createRequest({
+        channelId: "channel-1",
+        authToken: "token",
+        senderDeviceId: "device-1",
+        locale: "en",
+        eventId: "evt-doubles",
+        playedAt: "2026-02-08T12:00:00.000Z",
+        isDoubles: true,
+        playerAName: "Alice + Charlie",
+        playerBName: "Bob + Dana",
+        winnerName: "Bob + Dana",
+        playerARating: 995,
+        playerBRating: 1012,
+        playerARank: 3,
+        playerBRank: 1,
+      }),
+      response,
+    );
+
+    expect(capturedPayloadFactory).not.toBeNull();
+    if (capturedPayloadFactory) {
+      const enPayload = capturedPayloadFactory("en") as { body: string };
+      const csPayload = capturedPayloadFactory("cs") as { body: string };
+
+      expect(enPayload.body).toContain("Doubles:");
+      expect(enPayload.body).toContain("Bob + Dana");
+      expect(enPayload.body).toContain("Alice + Charlie");
+      expect(csPayload.body).toContain("Čtyřhra:");
+      expect(csPayload.body).toContain("Bob + Dana");
+      expect(csPayload.body).toContain("Alice + Charlie");
     }
   });
 
@@ -313,6 +381,7 @@ describe("notify-match handler", () => {
           locale: "en",
           eventId: "evt-retry",
           playedAt: "2026-02-08T12:00:00.000Z",
+          isDoubles: false,
           playerAName: "Alice",
           playerBName: "Bob",
           winnerName: "Alice",
@@ -348,6 +417,7 @@ describe("notify-match handler", () => {
           locale: "en",
           eventId: "evt-redis-fail",
           playedAt: "2026-02-08T12:00:00.000Z",
+          isDoubles: false,
           playerAName: "Alice",
           playerBName: "Bob",
           winnerName: "Alice",
