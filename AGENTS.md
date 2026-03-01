@@ -143,7 +143,7 @@ return <button>{t("Add player")}</button>;
 i18next.init({
   fallbackLng: "en",
   supportedLngs: ["en", "cs"],
-  keySeparator: false, // Allows keys with dots like "e.g. Katarína"
+  keySeparator: false, // Allows keys with dots like "e.g. Jan Netrefil"
   nsSeparator: false, // Allows keys with colons
   resources: {
     cs: { translation: csTranslations },

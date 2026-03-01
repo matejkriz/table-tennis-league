@@ -1,5 +1,6 @@
 import * as Evolu from "@evolu/common";
 import { IconTrash } from "@tabler/icons-react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { formatTypeError, useEvolu } from "../evolu/client";
@@ -8,11 +9,17 @@ import type { MatchSummary } from "../hooks/useLeagueData";
 interface MatchHistoryProps {
   readonly matches: ReadonlyArray<MatchSummary>;
   readonly readonly?: boolean;
+  readonly scrollToMatchId?: string;
 }
 
-export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) => {
+export const MatchHistory = ({
+  matches,
+  readonly = false,
+  scrollToMatchId,
+}: MatchHistoryProps) => {
   const { t } = useTranslation();
   const { update } = useEvolu();
+  const hasScrolledRef = useRef<string | null>(null);
 
   if (matches.length === 0) {
     return (
@@ -25,6 +32,22 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
   const reversed = [...matches].sort((a, b) =>
     b.match.playedAt.localeCompare(a.match.playedAt),
   );
+
+  useEffect(() => {
+    if (!scrollToMatchId) return;
+    if (hasScrolledRef.current === scrollToMatchId) return;
+
+    const target = document.querySelector<HTMLElement>(
+      `[data-match-id="${scrollToMatchId}"]`,
+    );
+    if (!target) return;
+
+    hasScrolledRef.current = scrollToMatchId;
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [reversed, scrollToMatchId]);
 
   const handleDelete = (matchId: string) => {
     const confirmed = window.confirm(
@@ -58,7 +81,12 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
           });
 
         return (
-          <li key={match.id} className="py-5 first:pt-0">
+          <li
+            key={match.id}
+            id={`match-history-${match.id}`}
+            data-match-id={match.id}
+            className="py-5 first:pt-0"
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium uppercase tracking-wider text-black/50">

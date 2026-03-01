@@ -64,6 +64,11 @@ interface MatchRecorderProps {
   readonly currentRatings: ReadonlyMap<PlayerId, number>;
   readonly matches: ReadonlyArray<MatchRow>;
   readonly mode?: "singles" | "doubles";
+  readonly onMatchRecorded?: (payload: {
+    playedAt: string;
+    winnerLabel: string;
+    loserLabel: string;
+  }) => void;
 }
 
 export const MatchRecorder = ({
@@ -71,6 +76,7 @@ export const MatchRecorder = ({
   currentRatings,
   matches,
   mode = "singles",
+  onMatchRecorded,
 }: MatchRecorderProps) => {
   const { t } = useTranslation();
   const { insert } = useEvolu();
@@ -85,7 +91,7 @@ export const MatchRecorder = ({
   );
   const [playerA2Id, setPlayerA2Id] = useState<PlayerId | "">("");
   const [playerB2Id, setPlayerB2Id] = useState<PlayerId | "">("");
-  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam>("A");
+  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam | null>("A");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -133,8 +139,27 @@ export const MatchRecorder = ({
     return { teamAPlayerIds, teamBPlayerIds };
   }, [isDoublesMode, playerA2Id, playerAId, playerB2Id, playerBId]);
 
+  const teamLabels = useMemo(() => {
+    if (!teamSelection) return null;
+
+    const toLabel = (ids: ReadonlyArray<PlayerId>) =>
+      ids.reduce<string[]>((acc, id) => {
+        const name = playersById.get(id)?.name;
+        if (name) acc.push(name);
+        return acc;
+      }, []).join(" + ");
+
+    return {
+      teamALabel: toLabel(teamSelection.teamAPlayerIds),
+      teamBLabel: toLabel(teamSelection.teamBPlayerIds),
+    };
+  }, [playersById, teamSelection]);
+
   const preview = useMemo(() => {
     if (!teamSelection) {
+      return null;
+    }
+    if (!winnerTeam) {
       return null;
     }
 
@@ -184,14 +209,18 @@ export const MatchRecorder = ({
       return null;
     }
 
-    const teamALabel = participants
-      .filter((entry) => entry.team === "A")
-      .map((entry) => entry.player.name)
-      .join(" + ");
-    const teamBLabel = participants
-      .filter((entry) => entry.team === "B")
-      .map((entry) => entry.player.name)
-      .join(" + ");
+    const teamALabel =
+      teamLabels?.teamALabel ??
+      participants
+        .filter((entry) => entry.team === "A")
+        .map((entry) => entry.player.name)
+        .join(" + ");
+    const teamBLabel =
+      teamLabels?.teamBLabel ??
+      participants
+        .filter((entry) => entry.team === "B")
+        .map((entry) => entry.player.name)
+        .join(" + ");
 
     return {
       ...ratingResult,
@@ -201,7 +230,7 @@ export const MatchRecorder = ({
       teamAPlayerIds: teamSelection.teamAPlayerIds,
       teamBPlayerIds: teamSelection.teamBPlayerIds,
     };
-  }, [currentRatings, playersById, teamSelection, winnerTeam]);
+  }, [currentRatings, teamLabels, teamSelection, winnerTeam, playersById]);
 
   const resetForm = () => {
     setNote("");
@@ -237,6 +266,10 @@ export const MatchRecorder = ({
       setError(t("Select valid teams."));
       return;
     }
+    if (!winnerTeam) {
+      setError(t("Winner must be one of the selected players."));
+      return;
+    }
 
     const playedAtResult = Evolu.dateToDateIso(new Date());
     if (!playedAtResult.ok) {
@@ -245,7 +278,10 @@ export const MatchRecorder = ({
     }
 
     const trimmedNote = note.trim();
-    const winnerId = (winnerTeam === "A" ? playerAId : playerBId) as PlayerId;
+    const selectedWinnerTeam = winnerTeam;
+    setWinnerTeam(null);
+
+    const winnerId = (selectedWinnerTeam === "A" ? playerAId : playerBId) as PlayerId;
     const projectedRatings = new Map(currentRatings);
     preview.participants.forEach((participant) => {
       projectedRatings.set(participant.id, participant.ratingAfter);
@@ -279,7 +315,10 @@ export const MatchRecorder = ({
 
     const teamAAverageAfter = preview.teamAverageA + preview.teamDeltaA;
     const teamBAverageAfter = preview.teamAverageB + preview.teamDeltaB;
-    const winnerLabel = winnerTeam === "A" ? preview.teamALabel : preview.teamBLabel;
+    const winnerLabel =
+      selectedWinnerTeam === "A" ? preview.teamALabel : preview.teamBLabel;
+    const loserLabel =
+      selectedWinnerTeam === "A" ? preview.teamBLabel : preview.teamALabel;
 
     const insertResult = insert(
       "match",
@@ -296,6 +335,11 @@ export const MatchRecorder = ({
       {
         onComplete: () => {
           resetForm();
+          onMatchRecorded?.({
+            playedAt: playedAtResult.value,
+            winnerLabel,
+            loserLabel,
+          });
 
           void enqueueMatchNotification({
             playedAt: playedAtResult.value,
@@ -313,6 +357,7 @@ export const MatchRecorder = ({
     );
 
     if (!insertResult.ok) {
+      setWinnerTeam(selectedWinnerTeam);
       setError(formatTypeError(insertResult.error));
     }
   };
@@ -384,7 +429,7 @@ export const MatchRecorder = ({
         </div>
       )}
 
-      {preview && (
+      {teamLabels && (
         <div className="border-t border-black/10 pt-5">
           <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
             {t("Winner")}
@@ -393,19 +438,19 @@ export const MatchRecorder = ({
             {[
               {
                 id: "A" as const,
-                label: preview.teamALabel,
+                label: teamLabels.teamALabel,
                 color: PLAYER_A_COLOR,
               },
               {
                 id: "B" as const,
-                label: preview.teamBLabel,
+                label: teamLabels.teamBLabel,
                 color: PLAYER_B_COLOR,
               },
             ]
               .map((item) => {
                 const color = item.color;
                 const isSelected = winnerTeam === item.id;
-                const isLoser = winnerTeam !== item.id;
+                const isLoser = winnerTeam != null && winnerTeam !== item.id;
 
                 // Inline styles for dynamic colors
                 const selectedStyles = isSelected
@@ -504,7 +549,7 @@ export const MatchRecorder = ({
             currentRatings={currentRatings}
             projectedDeltaA={preview?.teamDeltaA ?? 0}
             projectedDeltaB={preview?.teamDeltaB ?? 0}
-            winnerId={winnerTeam === "A" ? playerAId : playerBId}
+            winnerId={winnerTeam == null ? "" : winnerTeam === "A" ? playerAId : playerBId}
           />
         </CollapsibleSection>
       )}

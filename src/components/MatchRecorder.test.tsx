@@ -261,8 +261,47 @@ describe("MatchRecorder", () => {
     }
 
     await waitFor(() => {
-      expect(noteInput).toHaveValue("");
+      expect(screen.queryByPlaceholderText(/score, highlights/i)).not.toBeInTheDocument();
     });
+  });
+
+  it("should clear winner selection and emit onMatchRecorded after successful submission", async () => {
+    const user = userEvent.setup();
+    const onMatchRecorded = vi.fn();
+    let onCompleteCallback: (() => void) | undefined;
+
+    mockInsert.mockImplementation(
+      (_table: string, _data: unknown, options?: { onComplete?: () => void }) => {
+        onCompleteCallback = options?.onComplete;
+        return { ok: true };
+      }
+    );
+
+    render(
+      <MatchRecorder
+        players={mockPlayers}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        onMatchRecorded={onMatchRecorded}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: /record match/i }));
+    if (onCompleteCallback) onCompleteCallback();
+
+    await waitFor(() => {
+      expect(onMatchRecorded).toHaveBeenCalledWith(
+        expect.objectContaining({
+          playedAt: expect.any(String),
+          winnerLabel: "Alice",
+          loserLabel: "Bob",
+        })
+      );
+    });
+
+    expect(
+      screen.queryByRole("button", { name: /record match/i })
+    ).not.toBeInTheDocument();
   });
 
   it("should enqueue push notification after successful insert completion", async () => {

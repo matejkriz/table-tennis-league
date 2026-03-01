@@ -14,6 +14,10 @@ interface CollapsibleSectionProps {
   children: ReactNode;
   /** Optional element to display on the right side of the header (e.g., "STR" label) */
   headerRight?: ReactNode;
+  /** Optional controlled open state. When set, component becomes controlled. */
+  isOpen?: boolean;
+  /** Optional controlled toggle callback. */
+  onToggle?: (nextOpen: boolean) => void;
 }
 
 export function CollapsibleSection({
@@ -22,14 +26,24 @@ export function CollapsibleSection({
   defaultOpen,
   children,
   headerRight,
+  isOpen: controlledIsOpen,
+  onToggle,
 }: CollapsibleSectionProps) {
-  const [isOpen, toggle] = useCollapsibleState(storageKey, defaultOpen);
+  const [storedIsOpen, toggleStored] = useCollapsibleState(storageKey, defaultOpen);
+  const isOpen = controlledIsOpen ?? storedIsOpen;
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle(!isOpen);
+      return;
+    }
+    toggleStored();
+  };
 
   return (
     <section className="rounded-lg border border-black/10 bg-white">
       <button
         type="button"
-        onClick={toggle}
+        onClick={handleToggle}
         className="flex w-full items-center justify-between p-5 text-left sm:p-6"
         aria-expanded={isOpen}
       >

@@ -179,7 +179,7 @@ export const StartPage = () => {
                   className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
                   maxLength={100}
                   onChange={(event) => setPlayerName(event.target.value)}
-                  placeholder={t("e.g. Katarína")}
+                  placeholder={t("e.g. Jan Netrefil")}
                   required
                   value={playerName}
                 />

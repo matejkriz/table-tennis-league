@@ -11,7 +11,7 @@ i18next
   .init({
     fallbackLng: "en",
     supportedLngs: ["en", "cs"],
-    keySeparator: false, // Allow keys with dots (e.g., "e.g. Katarína")
+    keySeparator: false, // Allow keys with dots (e.g., "e.g. Jan Netrefil")
     nsSeparator: false, // Allow keys with colons
     interpolation: {
       escapeValue: false, // React already escapes
