@@ -26,7 +26,8 @@ const isValidRequest = (
     isNonEmptyString(body.locale) &&
     isNonEmptyString(body.eventId) &&
     isNonEmptyString(body.playedAt) &&
-    typeof body.isDoubles === "boolean" &&
+    (typeof body.isDoubles === "boolean" ||
+      typeof body.isDoubles === "undefined") &&
     isNonEmptyString(body.playerAName) &&
     isNonEmptyString(body.playerBName) &&
     isNonEmptyString(body.winnerName) &&
@@ -66,11 +67,10 @@ const createPayload = (
   const winnerRank = isPlayerAWinner ? body.playerARank : body.playerBRank;
   const loserRank = isPlayerAWinner ? body.playerBRank : body.playerARank;
 
+  const isDoubles = body.isDoubles ?? false;
   const title = translate("Satoshi's League", locale);
   const defeatedText = translate("defeated", locale);
-  const matchPrefix = body.isDoubles
-    ? `${translate("Doubles", locale)}: `
-    : "";
+  const matchPrefix = isDoubles ? `${translate("Doubles", locale)}: ` : "";
 
   return {
     type: "match-played",
