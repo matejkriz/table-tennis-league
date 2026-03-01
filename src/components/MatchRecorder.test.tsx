@@ -14,15 +14,11 @@ vi.mock("../hooks/useLeagueData", () => ({
   useLeagueData: vi.fn(),
   K_FACTOR: 16,
 }));
-vi.mock("../hooks/useDoublesPreference", () => ({
-  useDoublesPreference: vi.fn(),
-}));
 
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlayerId, MatchRow } from "../evolu/client";
 import { useEvolu } from "../evolu/client";
-import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { useLeagueData } from "../hooks/useLeagueData";
 import { MatchRecorder } from "./MatchRecorder";
@@ -75,7 +71,6 @@ describe("MatchRecorder", () => {
     vi.mocked(usePushNotifications).mockReturnValue({
       enqueueMatchNotification: mockEnqueueMatchNotification,
     } as unknown as ReturnType<typeof usePushNotifications>);
-    vi.mocked(useDoublesPreference).mockReturnValue([false, vi.fn()]);
     vi.mocked(useLeagueData).mockReturnValue({
       players: mockPlayers,
       playersById: new Map(mockPlayers.map((p) => [p.id, p])),
@@ -301,10 +296,14 @@ describe("MatchRecorder", () => {
 
   it("should support doubles selection and insert doubles match fields", async () => {
     const user = userEvent.setup();
-    vi.mocked(useDoublesPreference).mockReturnValue([true, vi.fn()]);
 
     render(
-      <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
+      <MatchRecorder
+        players={mockPlayers}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        mode="doubles"
+      />
     );
 
     await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
@@ -327,6 +326,23 @@ describe("MatchRecorder", () => {
       }),
       expect.any(Object),
     );
+  });
+
+  it("should show team column layout in doubles mode", () => {
+    render(
+      <MatchRecorder
+        players={mockPlayers}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        mode="doubles"
+      />
+    );
+
+    expect(screen.queryByText("Second players")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/team a - player 1/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/team a - player 2/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/team b - player 1/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/team b - player 2/i)).toBeInTheDocument();
   });
 
   it("should display error when validation fails", async () => {
