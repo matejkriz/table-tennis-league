@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { AddPlayerForm } from "../components/AddPlayerForm";
 import { CollapsibleSection } from "../components/CollapsibleSection";
+import { DoublesModeSetting } from "../components/DoublesModeSetting";
 import { LanguageSelector } from "../components/LanguageSelector";
 import { OwnerSection } from "../components/OwnerSection";
 import { PushNotificationsSection } from "../components/PushNotificationsSection";
@@ -34,6 +35,14 @@ const SettingsPage = () => {
           defaultOpen={false}
         >
           <LanguageSelector />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          storageKey="section-settings-doubles"
+          title={t("Doubles (čtyřhra)")}
+          defaultOpen={false}
+        >
+          <DoublesModeSetting />
         </CollapsibleSection>
 
         <CollapsibleSection

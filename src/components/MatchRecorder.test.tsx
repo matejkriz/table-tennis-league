@@ -14,11 +14,15 @@ vi.mock("../hooks/useLeagueData", () => ({
   useLeagueData: vi.fn(),
   K_FACTOR: 16,
 }));
+vi.mock("../hooks/useDoublesPreference", () => ({
+  useDoublesPreference: vi.fn(),
+}));
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlayerId, MatchRow } from "../evolu/client";
 import { useEvolu } from "../evolu/client";
+import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { useLeagueData } from "../hooks/useLeagueData";
 import { MatchRecorder } from "./MatchRecorder";
@@ -43,12 +47,18 @@ describe("MatchRecorder", () => {
       name: "Charlie",
       initialRating: 800,
     }),
+    createMockPlayer({
+      id: "player4" as PlayerId,
+      name: "Dana",
+      initialRating: 920,
+    }),
   ];
 
   const mockCurrentRatings = new Map<PlayerId, number>([
     ["player1" as PlayerId, 1050],
     ["player2" as PlayerId, 1180],
     ["player3" as PlayerId, 850],
+    ["player4" as PlayerId, 920],
   ]);
 
   const mockMatches: MatchRow[] = [];
@@ -65,6 +75,7 @@ describe("MatchRecorder", () => {
     vi.mocked(usePushNotifications).mockReturnValue({
       enqueueMatchNotification: mockEnqueueMatchNotification,
     } as unknown as ReturnType<typeof usePushNotifications>);
+    vi.mocked(useDoublesPreference).mockReturnValue([false, vi.fn()]);
     vi.mocked(useLeagueData).mockReturnValue({
       players: mockPlayers,
       playersById: new Map(mockPlayers.map((p) => [p.id, p])),
@@ -73,6 +84,7 @@ describe("MatchRecorder", () => {
         { player: mockPlayers[1], rating: 1180, delta: -20, matchCount: 5 },
         { player: mockPlayers[0], rating: 1050, delta: 50, matchCount: 3 },
         { player: mockPlayers[2], rating: 850, delta: 50, matchCount: 2 },
+        { player: mockPlayers[3], rating: 920, delta: 0, matchCount: 1 },
       ],
     } as unknown as ReturnType<typeof useLeagueData>);
     mockInsert.mockClear();
@@ -184,8 +196,7 @@ describe("MatchRecorder", () => {
     );
   });
 
-  it("should prevent selecting the same player twice", async () => {
-    const user = userEvent.setup();
+  it("should hide selected player from opposite selector options", () => {
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
@@ -193,17 +204,11 @@ describe("MatchRecorder", () => {
     const playerASelect = screen.getByLabelText(/player a/i);
     const playerBSelect = screen.getByLabelText(/player b/i);
 
-    // Initially: Alice vs Bob
     expect(playerASelect).toHaveValue("player1");
     expect(playerBSelect).toHaveValue("player2");
 
-    // When we select Bob for Player A, Player B should automatically change
-    await user.selectOptions(playerASelect, "player2");
-
-    // Player B should now be different (not Bob)
-    await waitFor(() => {
-      expect(playerBSelect).not.toHaveValue("player2");
-    });
+    expect(within(playerASelect).queryByRole("option", { name: "Bob" })).toBeNull();
+    expect(within(playerBSelect).queryByRole("option", { name: "Alice" })).toBeNull();
   });
 
   it("should include note when provided", async () => {
@@ -294,25 +299,34 @@ describe("MatchRecorder", () => {
     });
   });
 
-  it("should change player B when player A is changed to same value", async () => {
+  it("should support doubles selection and insert doubles match fields", async () => {
     const user = userEvent.setup();
+    vi.mocked(useDoublesPreference).mockReturnValue([true, vi.fn()]);
+
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
-    const playerSelects = screen.getAllByRole("combobox");
+    await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
+    await user.selectOptions(screen.getByLabelText(/team b - player 2/i), "player4");
 
-    // Initially: Alice vs Bob
-    expect(playerSelects[0]).toHaveValue("player1");
-    expect(playerSelects[1]).toHaveValue("player2");
+    expect(screen.getByRole("button", { name: /alice \+ charlie/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /bob \+ dana/i })).toBeInTheDocument();
 
-    // Change player A to Bob (same as player B)
-    await user.selectOptions(playerSelects[0], "player2");
+    await user.click(screen.getByRole("button", { name: /record match/i }));
 
-    // Player B should automatically change to avoid duplicate
-    await waitFor(() => {
-      expect(playerSelects[1]).not.toHaveValue("player2");
-    });
+    expect(mockInsert).toHaveBeenCalledWith(
+      "match",
+      expect.objectContaining({
+        playerAId: "player1",
+        playerBId: "player2",
+        playerA2Id: "player3",
+        playerB2Id: "player4",
+        winnerId: "player1",
+        winnerTeam: "A",
+      }),
+      expect.any(Object),
+    );
   });
 
   it("should display error when validation fails", async () => {

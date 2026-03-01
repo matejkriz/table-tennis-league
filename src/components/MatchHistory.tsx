@@ -45,9 +45,17 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
   return (
     <ol className="divide-y divide-black/5">
       {reversed.map((entry) => {
-        const { match, players, delta, ratingAfter } = entry;
-        const winner = players.a?.id === match.winnerId ? players.a : players.b;
-        const loser = winner && winner.id === players.a?.id ? players.b : players.a;
+        const { match } = entry;
+        const winnerTeam = entry.winnerTeam === "A" ? entry.teamAPlayers : entry.teamBPlayers;
+        const loserTeam = entry.winnerTeam === "A" ? entry.teamBPlayers : entry.teamAPlayers;
+        const winnerLabel = winnerTeam.map((player) => player.name).join(" + ");
+        const loserLabel = loserTeam.map((player) => player.name).join(" + ");
+        const participantCards = entry.participants
+          .slice()
+          .sort((a, b) => {
+            if (a.team !== b.team) return a.team === "A" ? -1 : 1;
+            return a.player.name.localeCompare(b.player.name);
+          });
 
         return (
           <li key={match.id} className="py-5 first:pt-0">
@@ -57,9 +65,9 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
                   {new Date(match.playedAt).toLocaleString()}
                 </p>
                 <p className="mt-2 text-base font-medium text-black">
-                  {winner?.name ?? t("Winner")}
+                  {winnerLabel || t("Winner")}
                   <span className="ml-2 text-sm font-normal text-black/60">
-                    {t("defeated")} {loser?.name ?? t("Opponent")}
+                    {t("defeated")} {loserLabel || t("Opponent")}
                   </span>
                 </p>
               </div>
@@ -75,29 +83,20 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
               )}
             </div>
 
-            <dl className="mt-4 grid grid-cols-2 gap-4">
-              <div className="rounded border border-black/10 bg-black/5 p-3">
-                <dt className="text-xs font-medium uppercase tracking-wide text-black/50">
-                  {players.a?.name ?? t("Player A")}
-                </dt>
-                <dd className="mt-1.5 font-mono text-sm text-black">
-                  <span className={delta.a && delta.a > 0 ? "text-[#F7931A]" : ""}>
-                    {formatDelta(delta.a)}
-                  </span>{" "}
-                  → {ratingAfter.a?.toFixed(1) ?? "-"}
-                </dd>
-              </div>
-              <div className="rounded border border-black/10 bg-black/5 p-3">
-                <dt className="text-xs font-medium uppercase tracking-wide text-black/50">
-                  {players.b?.name ?? t("Player B")}
-                </dt>
-                <dd className="mt-1.5 font-mono text-sm text-black">
-                  <span className={delta.b && delta.b > 0 ? "text-[#F7931A]" : ""}>
-                    {formatDelta(delta.b)}
-                  </span>{" "}
-                  → {ratingAfter.b?.toFixed(1) ?? "-"}
-                </dd>
-              </div>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+              {participantCards.map((participant) => (
+                <div key={participant.player.id} className="rounded border border-black/10 bg-black/5 p-3">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-black/50">
+                    {participant.player.name}
+                  </dt>
+                  <dd className="mt-1.5 font-mono text-sm text-black">
+                    <span className={participant.delta > 0 ? "text-[#F7931A]" : ""}>
+                      {formatDelta(participant.delta)}
+                    </span>{" "}
+                    → {participant.ratingAfter.toFixed(1)}
+                  </dd>
+                </div>
+              ))}
             </dl>
 
             {match.note && (

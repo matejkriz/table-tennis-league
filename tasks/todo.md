@@ -1,0 +1,16 @@
+- [x] Create and switch to branch `doubles`.
+- [x] Add a shared persisted preference for doubles mode (not local-only `_uiPreference`) and expose it via a new hook.
+- [x] Add a settings section with a doubles (`čtyřhra`) toggle wired to the shared preference.
+- [x] Extend match storage/query types to support doubles data while keeping singles compatibility.
+- [x] Implement doubles rating math: team average Elo, then split team delta across both teammates proportionally to their pre-match ratings.
+- [x] Reuse the same rating math in recorder preview and league processing to keep behavior consistent.
+- [x] Update match recorder UI for doubles mode:
+- [x] Keep existing singles selectors.
+- [x] Add second teammate selectors as a new section placed second in the form.
+- [x] Ensure 4 selected players are unique in doubles mode.
+- [x] Show winner buttons using both team member names.
+- [x] Insert doubles match rows with team metadata.
+- [x] Update relevant tests (`useLeagueData`, `MatchRecorder`) and translation strings.
+- [x] Run validation: targeted tests + `yarn typecheck`.
+- [x] Perform manual UI test and capture a demo video artifact.
+- [ ] Stage, commit, and push all changes.
