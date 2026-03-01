@@ -208,7 +208,7 @@ export const appSettingsQuery = evolu.createQuery((db) =>
     .$narrowType<{ key: Evolu.kysely.NotNull }>()
     .where("isEnabled", "is not", null)
     .$narrowType<{ isEnabled: Evolu.kysely.NotNull }>()
-    .orderBy("createdAt")
+    .orderBy("createdAt", "desc")
 );
 
 export type AppSettingRow = typeof appSettingsQuery.Row;
