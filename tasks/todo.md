@@ -1,6 +1,6 @@
-- [x] Add explicit `isDoubles` flag to push notification payload contracts (frontend + API types).
-- [x] Include `isDoubles` in match notification enqueue calls from `MatchRecorder`.
-- [x] Update notify-match API validation/payload formatting for doubles notification text with team names.
-- [x] Add/adjust tests to prove doubles push notifications are accepted and include all names.
-- [x] Run focused tests + `yarn typecheck`.
-- [x] Update docs and commit/push.
+- [x] Remove `(čtyřhra)` from English UI labels while keeping Czech wording in translations.
+- [x] Remove the extra doubles settings helper label about sync.
+- [x] Update locale keys to match new English source strings.
+- [x] Run `yarn typecheck`.
+- [x] Manually verify Settings wording in the browser and capture updated walkthrough artifacts.
+- [x] Update docs (`docs/tasks/doubles-mode.md`, `docs/LESSONS.md`) and commit/push.

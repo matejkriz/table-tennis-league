@@ -39,7 +39,7 @@ const SettingsPage = () => {
 
         <CollapsibleSection
           storageKey="section-settings-doubles"
-          title={t("Doubles (čtyřhra)")}
+          title={t("Doubles")}
           defaultOpen={false}
         >
           <DoublesModeSetting />

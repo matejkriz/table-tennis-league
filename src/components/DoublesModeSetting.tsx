@@ -9,7 +9,7 @@ export const DoublesModeSetting = () => {
   return (
     <div className="space-y-3">
       <p className="text-sm text-black/60">
-        {t("Enable doubles mode (čtyřhra) for 2v2 team matches.")}
+        {t("Enable doubles mode for 2v2 team matches.")}
       </p>
       <button
         type="button"
@@ -29,9 +29,6 @@ export const DoublesModeSetting = () => {
           </span>
         </div>
       </button>
-      <p className="text-xs text-black/50">
-        {t("This setting is synced with your account.")}
-      </p>
     </div>
   );
 };
