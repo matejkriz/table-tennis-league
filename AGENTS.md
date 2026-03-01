@@ -462,3 +462,30 @@ Run tests in watch mode during development for instant feedback on changes.
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
 - **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
+## Cursor Cloud specific instructions
+
+### Services
+
+| Service | Command | Notes |
+|---|---|---|
+| Vite Dev Server | `yarn dev` | Serves the React PWA on `http://localhost:5173`. The only service needed for all core functionality. |
+
+Push notifications (Vercel serverless + Upstash Redis) are optional and require external secrets — see `README.md` "Web Push Setup" section.
+
+### Quick reference
+
+- **Install deps:** `yarn install`
+- **Dev server:** `yarn dev` (Vite, hot-reload)
+- **Typecheck:** `yarn typecheck`
+- **Tests:** `yarn test --run` (single run) or `yarn test` (watch mode). All 118 tests pass.
+- **Lint:** `yarn lint` — requires an `eslint.config.js` which is currently missing from the repo. This is a pre-existing issue; ESLint 9 flat config file was never committed.
+- **Build:** `yarn build`
+
+### Gotchas
+
+- The project uses **Yarn Classic** (v1). The lockfile is `yarn.lock`.
+- No `.nvmrc` or `.node-version` file exists; Node 22 LTS works.
+- Evolu uses **SQLite WASM** — the Vite config excludes `@evolu/sqlite-wasm`, `kysely`, and `@evolu/react-web` from dependency pre-bundling. Do not add these to `optimizeDeps.include`.
+- `recharts` stderr warnings about chart width/height in tests are expected (jsdom has no layout engine) and do not indicate failures.
+- `act(...)` warnings during `MatchRecorder` and `AddPlayerForm` tests are pre-existing React Testing Library warnings — tests still pass.
