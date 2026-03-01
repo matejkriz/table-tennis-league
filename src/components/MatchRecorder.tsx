@@ -1,6 +1,6 @@
 import * as Evolu from "@evolu/common";
 import { IconMoodSad, IconTrophy } from "@tabler/icons-react";
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
@@ -16,6 +16,48 @@ import { RatingChart } from "./RatingChart";
 
 const PLAYER_A_COLOR = "#F7931A";
 const PLAYER_B_COLOR = "#3B82F6";
+
+const SELECT_CLASS =
+  "w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20";
+
+type PlayerSlot = readonly [PlayerId | "", (id: PlayerId | "") => void];
+
+const handlePlayerChange = (
+  setSelf: (id: PlayerId | "") => void,
+  opposingSlots: ReadonlyArray<PlayerSlot>,
+) => (event: ChangeEvent<HTMLSelectElement>) => {
+  const id = event.target.value as PlayerId | "";
+  setSelf(id);
+  if (id) {
+    for (const [currentId, setter] of opposingSlots) {
+      if (id === currentId) setter("");
+    }
+  }
+};
+
+interface PlayerSelectProps {
+  readonly label: string;
+  readonly value: PlayerId | "";
+  readonly options: ReadonlyArray<PlayerRow>;
+  readonly onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  readonly placeholder: string;
+}
+
+const PlayerSelect = ({ label, value, options, onChange, placeholder }: PlayerSelectProps) => (
+  <label className="block">
+    <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+      {label}
+    </span>
+    <select className={SELECT_CLASS} value={value} onChange={onChange}>
+      <option value="">{placeholder}</option>
+      {options.map((player) => (
+        <option key={player.id} value={player.id}>
+          {player.name}
+        </option>
+      ))}
+    </select>
+  </label>
+);
 
 interface MatchRecorderProps {
   readonly players: ReadonlyArray<PlayerRow>;
@@ -291,114 +333,54 @@ export const MatchRecorder = ({
       {isDoublesMode ? (
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-5">
-            <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-                {t("Team A - player 1")}
-              </span>
-              <select
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-                value={playerAId}
-                onChange={(event) => setPlayerAId(event.target.value as PlayerId | "")}
-              >
-                <option value="">{t("Select player")}</option>
-                {getPlayerOptions(playerAId, [playerBId, playerA2Id, playerB2Id]).map((player) => (
-                  <option key={player.id} value={player.id}>
-                    {player.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-                {t("Team A - player 2")}
-              </span>
-              <select
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-                value={playerA2Id}
-                onChange={(event) => setPlayerA2Id(event.target.value as PlayerId | "")}
-              >
-                <option value="">{t("Select player")}</option>
-                {getPlayerOptions(playerA2Id, [playerAId, playerBId, playerB2Id]).map((player) => (
-                  <option key={player.id} value={player.id}>
-                    {player.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <PlayerSelect
+              label={t("Team A - player 1")}
+              value={playerAId}
+              options={getPlayerOptions(playerAId, [playerA2Id])}
+              onChange={handlePlayerChange(setPlayerAId, [[playerBId, setPlayerBId], [playerB2Id, setPlayerB2Id]])}
+              placeholder={t("Select player")}
+            />
+            <PlayerSelect
+              label={t("Team A - player 2")}
+              value={playerA2Id}
+              options={getPlayerOptions(playerA2Id, [playerAId])}
+              onChange={handlePlayerChange(setPlayerA2Id, [[playerBId, setPlayerBId], [playerB2Id, setPlayerB2Id]])}
+              placeholder={t("Select player")}
+            />
           </div>
           <div className="space-y-5 border-t border-black/10 pt-6 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-            <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-                {t("Team B - player 1")}
-              </span>
-              <select
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-                value={playerBId}
-                onChange={(event) => setPlayerBId(event.target.value as PlayerId | "")}
-              >
-                <option value="">{t("Select player")}</option>
-                {getPlayerOptions(playerBId, [playerAId, playerA2Id, playerB2Id]).map((player) => (
-                  <option key={player.id} value={player.id}>
-                    {player.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-                {t("Team B - player 2")}
-              </span>
-              <select
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-                value={playerB2Id}
-                onChange={(event) => setPlayerB2Id(event.target.value as PlayerId | "")}
-              >
-                <option value="">{t("Select player")}</option>
-                {getPlayerOptions(playerB2Id, [playerAId, playerBId, playerA2Id]).map((player) => (
-                  <option key={player.id} value={player.id}>
-                    {player.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <PlayerSelect
+              label={t("Team B - player 1")}
+              value={playerBId}
+              options={getPlayerOptions(playerBId, [playerB2Id])}
+              onChange={handlePlayerChange(setPlayerBId, [[playerAId, setPlayerAId], [playerA2Id, setPlayerA2Id]])}
+              placeholder={t("Select player")}
+            />
+            <PlayerSelect
+              label={t("Team B - player 2")}
+              value={playerB2Id}
+              options={getPlayerOptions(playerB2Id, [playerBId])}
+              onChange={handlePlayerChange(setPlayerB2Id, [[playerAId, setPlayerAId], [playerA2Id, setPlayerA2Id]])}
+              placeholder={t("Select player")}
+            />
           </div>
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-              {t("Player A")}
-            </span>
-            <select
-              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-              value={playerAId}
-              onChange={(event) => setPlayerAId(event.target.value as PlayerId | "")}
-            >
-              <option value="">{t("Select player")}</option>
-              {getPlayerOptions(playerAId, [playerBId]).map((player) => (
-                <option key={player.id} value={player.id}>
-                  {player.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-              {t("Player B")}
-            </span>
-            <select
-              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-              value={playerBId}
-              onChange={(event) => setPlayerBId(event.target.value as PlayerId | "")}
-            >
-              <option value="">{t("Select player")}</option>
-              {getPlayerOptions(playerBId, [playerAId]).map((player) => (
-                <option key={player.id} value={player.id}>
-                  {player.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PlayerSelect
+            label={t("Player A")}
+            value={playerAId}
+            options={players}
+            onChange={handlePlayerChange(setPlayerAId, [[playerBId, setPlayerBId]])}
+            placeholder={t("Select player")}
+          />
+          <PlayerSelect
+            label={t("Player B")}
+            value={playerBId}
+            options={players}
+            onChange={handlePlayerChange(setPlayerBId, [[playerAId, setPlayerAId]])}
+            placeholder={t("Select player")}
+          />
         </div>
       )}
 

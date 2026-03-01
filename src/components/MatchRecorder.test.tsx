@@ -191,7 +191,8 @@ describe("MatchRecorder", () => {
     );
   });
 
-  it("should hide selected player from opposite selector options", () => {
+  it("should clear opposite selector when selecting its current player", async () => {
+    const user = userEvent.setup();
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
@@ -202,8 +203,14 @@ describe("MatchRecorder", () => {
     expect(playerASelect).toHaveValue("player1");
     expect(playerBSelect).toHaveValue("player2");
 
-    expect(within(playerASelect).queryByRole("option", { name: "Bob" })).toBeNull();
-    expect(within(playerBSelect).queryByRole("option", { name: "Alice" })).toBeNull();
+    // Both players should be visible in both dropdowns
+    expect(within(playerASelect).queryByRole("option", { name: "Bob" })).not.toBeNull();
+    expect(within(playerBSelect).queryByRole("option", { name: "Alice" })).not.toBeNull();
+
+    // Selecting Player B's current value in Player A should clear Player B
+    await user.selectOptions(playerASelect, "player2");
+    expect(playerASelect).toHaveValue("player2");
+    expect(playerBSelect).toHaveValue("");
   });
 
   it("should include note when provided", async () => {
