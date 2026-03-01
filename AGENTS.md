@@ -57,6 +57,11 @@ The application uses **Evolu** (a local-first database framework) for data persi
 
 - **Type safety**: Evolu provides strong typing with branded types (`PlayerId`, `MatchId`, etc.) and validation schemas (`NonEmptyTrimmedString100`, `NonNegativeNumber`, etc.).
 
+- **Schema evolution — no breaking changes**: Evolu stores data locally on each device and syncs it across devices. There is no migration mechanism that can retroactively alter existing rows. As a result:
+  - **Never remove or rename a column** — existing devices still hold rows with the old shape.
+  - **Every new column must be nullable** (e.g. `Evolu.NullOr(SomeType)`). Rows written before the column existed will have `null` there, and all query/display code must handle that gracefully.
+  - Treat the schema like a public append-only API: you can add nullable columns, but you cannot change or remove existing ones.
+
 ### Rating System
 
 The STR rating system is implemented in `src/hooks/useLeagueData.ts`:

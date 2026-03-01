@@ -36,7 +36,7 @@ export interface PushNotifyMatchRequest {
   readonly locale: string;
   readonly eventId: string;
   readonly playedAt: string;
-  readonly isDoubles: boolean;
+  readonly isDoubles?: boolean;
   readonly playerAName: string;
   readonly playerBName: string;
   readonly winnerName: string;
