@@ -31,3 +31,9 @@
 - Included `isDoubles` in `MatchRecorder` enqueue payloads.
 - Updated notify-match backend validation and payload formatting so doubles pushes are clearly marked and include full team names.
 - Added tests in `api/push/notify-match.test.ts`, `src/components/MatchRecorder.test.tsx`, and `src/lib/push/client.test.ts`.
+
+## Copy cleanup follow-up
+
+- Removed `(čtyřhra)` from English UI strings and kept Czech wording only in Czech translations.
+- Removed the extra doubles settings line “This setting is synced with your account.”
+- Verified updated wording manually on the Settings page.
