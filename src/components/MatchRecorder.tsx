@@ -5,8 +5,13 @@ import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
+import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { K_FACTOR, useLeagueData } from "../hooks/useLeagueData";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+import {
+  calculateTeamMatchRatingDeltas,
+  type WinnerTeam,
+} from "../utils/matchRating";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { RatingChart } from "./RatingChart";
 
@@ -26,6 +31,7 @@ export const MatchRecorder = ({
 }: MatchRecorderProps) => {
   const { t } = useTranslation();
   const { insert } = useEvolu();
+  const [isDoublesEnabled] = useDoublesPreference();
   const { enqueueMatchNotification } = usePushNotifications();
   const leagueData = useLeagueData();
   const [playerAId, setPlayerAId] = useState<PlayerId | "">(
@@ -34,7 +40,9 @@ export const MatchRecorder = ({
   const [playerBId, setPlayerBId] = useState<PlayerId | "">(
     players[1]?.id ?? "",
   );
-  const [winnerId, setWinnerId] = useState<PlayerId | "">(players[0]?.id ?? "");
+  const [playerA2Id, setPlayerA2Id] = useState<PlayerId | "">("");
+  const [playerB2Id, setPlayerB2Id] = useState<PlayerId | "">("");
+  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam>("A");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -44,30 +52,113 @@ export const MatchRecorder = ({
     return map;
   }, [players]);
 
-  const preview = useMemo(() => {
-    if (!playerAId || !playerBId || playerAId === playerBId) {
+  const getPlayerOptions = (
+    currentId: PlayerId | "",
+    blockedIds: ReadonlyArray<PlayerId | "">,
+  ): ReadonlyArray<PlayerRow> => {
+    const blocked = new Set(
+      blockedIds.filter((id): id is PlayerId => id !== ""),
+    );
+    return players.filter(
+      (player) => player.id === currentId || !blocked.has(player.id),
+    );
+  };
+
+  const teamSelection = useMemo(() => {
+    if (!playerAId || !playerBId) return null;
+
+    const teamAPlayerIds = isDoublesEnabled
+      ? playerA2Id
+        ? [playerAId, playerA2Id]
+        : []
+      : [playerAId];
+    const teamBPlayerIds = isDoublesEnabled
+      ? playerB2Id
+        ? [playerBId, playerB2Id]
+        : []
+      : [playerBId];
+
+    if (teamAPlayerIds.length === 0 || teamBPlayerIds.length === 0) {
       return null;
     }
 
-    const ratingA = currentRatings.get(playerAId);
-    const ratingB = currentRatings.get(playerBId);
-    if (ratingA == null || ratingB == null) return null;
-
-    const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-    const expectedB = 1 - expectedA;
-
-    if (winnerId !== playerAId && winnerId !== playerBId) {
-      return { expectedA, expectedB, ratingA, ratingB, deltaA: 0, deltaB: 0 };
+    const allIds = [...teamAPlayerIds, ...teamBPlayerIds];
+    if (new Set(allIds).size !== allIds.length) {
+      return null;
     }
 
-    const actualA = winnerId === playerAId ? 1 : 0;
-    const actualB = 1 - actualA;
+    return { teamAPlayerIds, teamBPlayerIds };
+  }, [isDoublesEnabled, playerA2Id, playerAId, playerB2Id, playerBId]);
 
-    const deltaA = K_FACTOR * (actualA - expectedA);
-    const deltaB = K_FACTOR * (actualB - expectedB);
+  const preview = useMemo(() => {
+    if (!teamSelection) {
+      return null;
+    }
 
-    return { expectedA, expectedB, ratingA, ratingB, deltaA, deltaB };
-  }, [currentRatings, playerAId, playerBId, winnerId]);
+    const ratingResult = calculateTeamMatchRatingDeltas({
+      teamAPlayerIds: teamSelection.teamAPlayerIds,
+      teamBPlayerIds: teamSelection.teamBPlayerIds,
+      winnerTeam,
+      ratings: currentRatings,
+      kFactor: K_FACTOR,
+    });
+    if (!ratingResult) return null;
+
+    const participants = [
+      ...teamSelection.teamAPlayerIds.map((id) => ({ id, team: "A" as const })),
+      ...teamSelection.teamBPlayerIds.map((id) => ({ id, team: "B" as const })),
+    ]
+      .map((entry) => {
+        const player = playersById.get(entry.id);
+        const ratingBefore = currentRatings.get(entry.id);
+        const delta = ratingResult.playerDeltas.get(entry.id);
+        if (!player || ratingBefore == null || delta == null) return null;
+        return {
+          ...entry,
+          player,
+          ratingBefore,
+          delta,
+          ratingAfter: ratingBefore + delta,
+        };
+      })
+      .filter(
+        (
+          entry,
+        ): entry is {
+          id: PlayerId;
+          team: WinnerTeam;
+          player: PlayerRow;
+          ratingBefore: number;
+          delta: number;
+          ratingAfter: number;
+        } => entry != null,
+      );
+
+    if (
+      participants.length !==
+      teamSelection.teamAPlayerIds.length + teamSelection.teamBPlayerIds.length
+    ) {
+      return null;
+    }
+
+    const teamALabel = participants
+      .filter((entry) => entry.team === "A")
+      .map((entry) => entry.player.name)
+      .join(" + ");
+    const teamBLabel = participants
+      .filter((entry) => entry.team === "B")
+      .map((entry) => entry.player.name)
+      .join(" + ");
+
+    return {
+      ...ratingResult,
+      participants,
+      teamALabel,
+      teamBLabel,
+      teamAPlayerIds: teamSelection.teamAPlayerIds,
+      teamBPlayerIds: teamSelection.teamBPlayerIds,
+    };
+  }, [currentRatings, playersById, teamSelection, winnerTeam]);
 
   const resetForm = () => {
     setNote("");
@@ -83,13 +174,24 @@ export const MatchRecorder = ({
       return;
     }
 
-    if (playerAId === playerBId) {
+    if (isDoublesEnabled && (!playerA2Id || !playerB2Id)) {
+      setError(t("Choose four players for doubles."));
+      return;
+    }
+
+    const selectedIds = [
+      playerAId,
+      playerBId,
+      ...(isDoublesEnabled ? [playerA2Id, playerB2Id] : []),
+    ].filter((id): id is PlayerId => id !== "");
+
+    if (new Set(selectedIds).size !== selectedIds.length) {
       setError(t("Players must be different."));
       return;
     }
 
-    if (winnerId !== playerAId && winnerId !== playerBId) {
-      setError(t("Winner must be one of the selected players."));
+    if (!preview) {
+      setError(t("Select valid teams."));
       return;
     }
 
@@ -100,42 +202,51 @@ export const MatchRecorder = ({
     }
 
     const trimmedNote = note.trim();
-    const winner = playersById.get(winnerId as PlayerId);
-    const playerA = playerAId ? playersById.get(playerAId) : undefined;
-    const playerB = playerBId ? playersById.get(playerBId) : undefined;
-
-    // Calculate projected ratings and rankings after the match
-    const ratingA = currentRatings.get(playerAId) ?? 0;
-    const ratingB = currentRatings.get(playerBId) ?? 0;
-    const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-    const expectedB = 1 - expectedA;
-    const actualA = winnerId === playerAId ? 1 : 0;
-    const actualB = 1 - actualA;
-    const projectedRatingA = ratingA + K_FACTOR * (actualA - expectedA);
-    const projectedRatingB = ratingB + K_FACTOR * (actualB - expectedB);
+    const winnerId = (winnerTeam === "A" ? playerAId : playerBId) as PlayerId;
+    const projectedRatings = new Map(currentRatings);
+    preview.participants.forEach((participant) => {
+      projectedRatings.set(participant.id, participant.ratingAfter);
+    });
 
     // Calculate projected rankings based on new ratings
     const projectedRankings = [...leagueData.ranking]
       .map((entry) => {
-        if (entry.player.id === playerAId) {
-          return { ...entry, rating: projectedRatingA };
-        }
-        if (entry.player.id === playerBId) {
-          return { ...entry, rating: projectedRatingB };
+        const projectedRating = projectedRatings.get(entry.player.id);
+        if (projectedRating != null) {
+          return { ...entry, rating: projectedRating };
         }
         return entry;
       })
       .sort((a, b) => b.rating - a.rating || a.player.name.localeCompare(b.player.name));
 
-    const playerARank = projectedRankings.findIndex((entry) => entry.player.id === playerAId) + 1;
-    const playerBRank = projectedRankings.findIndex((entry) => entry.player.id === playerBId) + 1;
+    const findRank = (id: PlayerId): number =>
+      projectedRankings.findIndex((entry) => entry.player.id === id) + 1;
+
+    const teamARankCandidates = preview.teamAPlayerIds
+      .map((id) => findRank(id))
+      .filter((rank) => rank > 0);
+    const teamBRankCandidates = preview.teamBPlayerIds
+      .map((id) => findRank(id))
+      .filter((rank) => rank > 0);
+
+    const teamARank =
+      teamARankCandidates.length > 0 ? Math.min(...teamARankCandidates) : 0;
+    const teamBRank =
+      teamBRankCandidates.length > 0 ? Math.min(...teamBRankCandidates) : 0;
+
+    const teamAAverageAfter = preview.teamAverageA + preview.teamDeltaA;
+    const teamBAverageAfter = preview.teamAverageB + preview.teamDeltaB;
+    const winnerLabel = winnerTeam === "A" ? preview.teamALabel : preview.teamBLabel;
 
     const insertResult = insert(
       "match",
       {
         playerAId,
         playerBId,
-        winnerId: winnerId as PlayerId,
+        playerA2Id: isDoublesEnabled ? playerA2Id : null,
+        playerB2Id: isDoublesEnabled ? playerB2Id : null,
+        winnerId,
+        winnerTeam: isDoublesEnabled ? winnerTeam : null,
         playedAt: playedAtResult.value,
         note: trimmedNote.length > 0 ? trimmedNote : null,
       },
@@ -143,16 +254,15 @@ export const MatchRecorder = ({
         onComplete: () => {
           resetForm();
 
-          if (!playerA || !playerB || !winner) return;
           void enqueueMatchNotification({
             playedAt: playedAtResult.value,
-            playerAName: playerA.name,
-            playerBName: playerB.name,
-            winnerName: winner.name,
-            playerARating: Math.round(projectedRatingA),
-            playerBRating: Math.round(projectedRatingB),
-            playerARank,
-            playerBRank,
+            playerAName: preview.teamALabel,
+            playerBName: preview.teamBLabel,
+            winnerName: winnerLabel,
+            playerARating: Math.round(teamAAverageAfter),
+            playerBRating: Math.round(teamBAverageAfter),
+            playerARank: teamARank,
+            playerBRank: teamBRank,
           });
         },
       },
@@ -163,10 +273,13 @@ export const MatchRecorder = ({
     }
   };
 
-  if (players.length < 2) {
+  const minPlayersRequired = isDoublesEnabled ? 4 : 2;
+  if (players.length < minPlayersRequired) {
     return (
       <p className="py-8 text-center text-sm text-black/50">
-        {t("Add at least two players to record a match.")}
+        {isDoublesEnabled
+          ? t("Add at least four players to record a doubles match.")
+          : t("Add at least two players to record a match.")}
       </p>
     );
   }
@@ -176,26 +289,15 @@ export const MatchRecorder = ({
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            {t("Player A")}
+            {isDoublesEnabled ? t("Team A - player 1") : t("Player A")}
           </span>
           <select
             className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
             value={playerAId}
-            onChange={(event) => {
-              const value = event.target.value as PlayerId | "";
-              setPlayerAId(value);
-              if (value && value === playerBId) {
-                const alternative =
-                  players.find((p) => p.id !== value)?.id ?? "";
-                setPlayerBId(alternative);
-              }
-              if (winnerId && winnerId !== value && winnerId !== playerBId) {
-                setWinnerId(value);
-              }
-            }}
+            onChange={(event) => setPlayerAId(event.target.value as PlayerId | "")}
           >
             <option value="">{t("Select player")}</option>
-            {players.map((player) => (
+            {getPlayerOptions(playerAId, [playerBId, playerA2Id, playerB2Id]).map((player) => (
               <option key={player.id} value={player.id}>
                 {player.name}
               </option>
@@ -204,26 +306,15 @@ export const MatchRecorder = ({
         </label>
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            {t("Player B")}
+            {isDoublesEnabled ? t("Team B - player 1") : t("Player B")}
           </span>
           <select
             className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
             value={playerBId}
-            onChange={(event) => {
-              const value = event.target.value as PlayerId | "";
-              setPlayerBId(value);
-              if (value && value === playerAId) {
-                const alternative =
-                  players.find((p) => p.id !== value)?.id ?? "";
-                setPlayerAId(alternative);
-              }
-              if (winnerId && winnerId !== value && winnerId !== playerAId) {
-                setWinnerId(value);
-              }
-            }}
+            onChange={(event) => setPlayerBId(event.target.value as PlayerId | "")}
           >
             <option value="">{t("Select player")}</option>
-            {players.map((player) => (
+            {getPlayerOptions(playerBId, [playerAId, playerA2Id, playerB2Id]).map((player) => (
               <option key={player.id} value={player.id}>
                 {player.name}
               </option>
@@ -232,27 +323,72 @@ export const MatchRecorder = ({
         </label>
       </div>
 
-      {playerAId && playerBId && (
+      {isDoublesEnabled && (
+        <div className="border-t border-black/10 pt-5">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
+            {t("Second players")}
+          </p>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+                {t("Team A - player 2")}
+              </span>
+              <select
+                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+                value={playerA2Id}
+                onChange={(event) => setPlayerA2Id(event.target.value as PlayerId | "")}
+              >
+                <option value="">{t("Select player")}</option>
+                {getPlayerOptions(playerA2Id, [playerAId, playerBId, playerB2Id]).map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+                {t("Team B - player 2")}
+              </span>
+              <select
+                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+                value={playerB2Id}
+                onChange={(event) => setPlayerB2Id(event.target.value as PlayerId | "")}
+              >
+                <option value="">{t("Select player")}</option>
+                {getPlayerOptions(playerB2Id, [playerAId, playerBId, playerA2Id]).map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {preview && (
         <div className="border-t border-black/10 pt-5">
           <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
             {t("Winner")}
           </p>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { id: playerAId, color: PLAYER_A_COLOR },
-              { id: playerBId, color: PLAYER_B_COLOR },
+              {
+                id: "A" as const,
+                label: preview.teamALabel,
+                color: PLAYER_A_COLOR,
+              },
+              {
+                id: "B" as const,
+                label: preview.teamBLabel,
+                color: PLAYER_B_COLOR,
+              },
             ]
-              .map((item) =>
-                item.id
-                  ? { player: playersById.get(item.id), color: item.color }
-                  : undefined,
-              )
-              .filter(Boolean)
               .map((item) => {
-                const player = item!.player!;
-                const color = item!.color;
-                const isSelected = winnerId === player.id;
-                const isLoser = winnerId !== "" && winnerId !== player.id;
+                const color = item.color;
+                const isSelected = winnerTeam === item.id;
+                const isLoser = winnerTeam !== item.id;
 
                 // Inline styles for dynamic colors
                 const selectedStyles = isSelected
@@ -271,9 +407,9 @@ export const MatchRecorder = ({
 
                 return (
                   <button
-                    key={player.id}
+                    key={item.id}
                     type="button"
-                    onClick={() => setWinnerId(player.id)}
+                    onClick={() => setWinnerTeam(item.id)}
                     className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-center transition-all ${
                       !isSelected
                         ? "border-black/10 bg-white hover:border-black/20 hover:bg-black/5"
@@ -299,7 +435,7 @@ export const MatchRecorder = ({
                       }`}
                       style={isSelected ? { color } : {}}
                     >
-                      {player.name}
+                      {item.label}
                     </span>
                     {isSelected && (
                       <span
@@ -321,7 +457,7 @@ export const MatchRecorder = ({
         </div>
       )}
 
-      {playerAId && playerBId && (
+      {preview && (
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
             {t("Optional note")}
@@ -337,7 +473,7 @@ export const MatchRecorder = ({
         </label>
       )}
 
-      {(playerAId || playerBId) && (
+      {!isDoublesEnabled && (playerAId || playerBId) && (
         <CollapsibleSection
           storageKey="match-recorder-rating-history"
           title={t("Rating history (90 days)")}
@@ -349,40 +485,36 @@ export const MatchRecorder = ({
             playerAId={playerAId}
             playerBId={playerBId}
             currentRatings={currentRatings}
-            projectedDeltaA={preview?.deltaA ?? 0}
-            projectedDeltaB={preview?.deltaB ?? 0}
-            winnerId={winnerId}
+            projectedDeltaA={preview?.teamDeltaA ?? 0}
+            projectedDeltaB={preview?.teamDeltaB ?? 0}
+            winnerId={winnerTeam === "A" ? playerAId : playerBId}
           />
         </CollapsibleSection>
       )}
 
-      {preview && playerAId && playerBId && (
+      {preview && (
         <div className="rounded border border-black/10 bg-black/5 p-4 text-sm">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-black/60">
             {t("Projected change")}
           </p>
           <div className="space-y-2 font-mono text-xs text-black/80">
-            <p>
-              {playersById.get(playerAId as PlayerId)?.name ?? t("Player A")}:{" "}
-              <span className={preview.deltaA > 0 ? "text-[#F7931A]" : ""}>
-                {formatDelta(preview.deltaA)}
-              </span>{" "}
-              ({preview.ratingA.toFixed(1)} → {(preview.ratingA + preview.deltaA).toFixed(1)})
-            </p>
-            <p>
-              {playersById.get(playerBId as PlayerId)?.name ?? t("Player B")}:{" "}
-              <span className={preview.deltaB > 0 ? "text-[#F7931A]" : ""}>
-                {formatDelta(preview.deltaB)}
-              </span>{" "}
-              ({preview.ratingB.toFixed(1)} → {(preview.ratingB + preview.deltaB).toFixed(1)})
-            </p>
+            {preview.participants.map((participant) => (
+              <p key={participant.id}>
+                {participant.player.name}:{" "}
+                <span className={participant.delta > 0 ? "text-[#F7931A]" : ""}>
+                  {formatDelta(participant.delta)}
+                </span>{" "}
+                ({participant.ratingBefore.toFixed(1)} →{" "}
+                {participant.ratingAfter.toFixed(1)})
+              </p>
+            ))}
           </div>
         </div>
       )}
 
       {error && <p className="text-sm text-black/60">{error}</p>}
 
-      {playerAId && playerBId && (
+      {preview && (
         <div className="flex justify-end pt-2">
           <button
             className="rounded-full bg-[#F7931A] px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-[#F7931A]/90 hover:shadow-lg active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50"

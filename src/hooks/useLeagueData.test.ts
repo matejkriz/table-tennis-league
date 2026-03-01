@@ -136,6 +136,73 @@ describe("useLeagueData", () => {
     expect(matchSummary.delta.b).toBeLessThan(-8); // Bigger loss for upset
   });
 
+  it("should calculate doubles team deltas and split by teammate ratings", () => {
+    const doublesPlayers = [
+      createMockPlayer({
+        id: "player1" as PlayerId,
+        name: "Alice",
+        initialRating: 1000,
+      }),
+      createMockPlayer({
+        id: "player2" as PlayerId,
+        name: "Bob",
+        initialRating: 1200,
+      }),
+      createMockPlayer({
+        id: "player3" as PlayerId,
+        name: "Charlie",
+        initialRating: 900,
+      }),
+      createMockPlayer({
+        id: "player4" as PlayerId,
+        name: "Dana",
+        initialRating: 1100,
+      }),
+    ];
+
+    const matches = [
+      createMockMatch({
+        id: "match1" as MatchRow["id"],
+        playerAId: "player1" as PlayerId,
+        playerA2Id: "player2" as PlayerId,
+        playerBId: "player3" as PlayerId,
+        playerB2Id: "player4" as PlayerId,
+        winnerId: "player1" as PlayerId,
+        winnerTeam: "A",
+        playedAt: "2024-01-02T00:00:00.000Z",
+      }),
+    ];
+
+    vi.mocked(useQuery).mockImplementation((query: any) => {
+      if (query.toString().includes("player")) return doublesPlayers;
+      if (query.toString().includes("match")) return matches;
+      return [];
+    });
+
+    const { result } = renderHook(() => useLeagueData());
+    const summary = result.current.matches[0];
+
+    expect(summary.isDoubles).toBe(true);
+    expect(summary.teamAPlayers).toHaveLength(2);
+    expect(summary.teamBPlayers).toHaveLength(2);
+
+    const teamADelta = (summary.delta.a ?? 0) + (summary.delta.aTeammate ?? 0);
+    const teamBDelta = (summary.delta.b ?? 0) + (summary.delta.bTeammate ?? 0);
+    expect(teamADelta).toBeCloseTo(-teamBDelta, 5);
+
+    // Split proportion follows teammate pre-match ratings:
+    // Alice:Bob = 1000:1200
+    expect((summary.delta.a ?? 0) / (summary.delta.aTeammate ?? 1)).toBeCloseTo(
+      1000 / 1200,
+      2,
+    );
+    // Charlie:Dana = 900:1100
+    expect((summary.delta.b ?? 0) / (summary.delta.bTeammate ?? 1)).toBeCloseTo(
+      900 / 1100,
+      2,
+    );
+  });
+
   it("should process matches in chronological order", () => {
     const matches = [
       createMockMatch({

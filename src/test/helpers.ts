@@ -33,7 +33,10 @@ export function createMockMatch(data: {
   id: MatchRow["id"];
   playerAId: PlayerId;
   playerBId: PlayerId;
+  playerA2Id?: PlayerId | null;
+  playerB2Id?: PlayerId | null;
   winnerId: PlayerId;
+  winnerTeam?: "A" | "B" | null;
   playedAt?: string;
   note?: string | null;
   createdAt?: string;
@@ -42,7 +45,10 @@ export function createMockMatch(data: {
     id: data.id,
     playerAId: data.playerAId,
     playerBId: data.playerBId,
+    playerA2Id: data.playerA2Id ?? null,
+    playerB2Id: data.playerB2Id ?? null,
     winnerId: data.winnerId,
+    winnerTeam: data.winnerTeam ?? null,
     playedAt: data.playedAt ?? "2024-01-02T00:00:00.000Z",
     note: data.note ?? null,
     createdAt: data.createdAt ?? "2024-01-02T00:00:00.000Z",

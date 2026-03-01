@@ -2,26 +2,50 @@ import { useMemo } from "react";
 
 import { matchesQuery, playersQuery, useQuery } from "../evolu/client";
 import type { MatchRow, PlayerRow } from "../evolu/client";
+import {
+  calculateTeamMatchRatingDeltas,
+  getMatchTeamDetails,
+  type WinnerTeam,
+} from "../utils/matchRating";
 
 export const K_FACTOR = 16;
 
 export interface MatchSummary {
   readonly match: MatchRow;
+  readonly isDoubles: boolean;
+  readonly winnerTeam: WinnerTeam;
+  readonly teamAPlayers: ReadonlyArray<PlayerRow>;
+  readonly teamBPlayers: ReadonlyArray<PlayerRow>;
+  readonly participants: ReadonlyArray<{
+    readonly player: PlayerRow;
+    readonly team: WinnerTeam;
+    readonly ratingBefore: number;
+    readonly ratingAfter: number;
+    readonly delta: number;
+  }>;
   readonly players: {
     readonly a?: PlayerRow;
     readonly b?: PlayerRow;
+    readonly aTeammate?: PlayerRow;
+    readonly bTeammate?: PlayerRow;
   };
   readonly ratingBefore: {
     readonly a?: number;
     readonly b?: number;
+    readonly aTeammate?: number;
+    readonly bTeammate?: number;
   };
   readonly ratingAfter: {
     readonly a?: number;
     readonly b?: number;
+    readonly aTeammate?: number;
+    readonly bTeammate?: number;
   };
   readonly delta: {
     readonly a?: number;
     readonly b?: number;
+    readonly aTeammate?: number;
+    readonly bTeammate?: number;
   };
 }
 
@@ -69,38 +93,121 @@ export const useLeagueData = (): LeagueData => {
     const summaries: MatchSummary[] = [];
 
     sortedMatches.forEach((match) => {
-      const playerA = playersById.get(match.playerAId);
-      const playerB = playersById.get(match.playerBId);
-      if (!playerA || !playerB) return;
+      const details = getMatchTeamDetails(match);
+      if (!details) return;
 
-      const stateA = ratingState.get(playerA.id);
-      const stateB = ratingState.get(playerB.id);
-      if (!stateA || !stateB) return;
+      const teamAPlayers = details.teamAPlayerIds
+        .map((id) => playersById.get(id))
+        .filter((player): player is PlayerRow => player != null);
+      const teamBPlayers = details.teamBPlayerIds
+        .map((id) => playersById.get(id))
+        .filter((player): player is PlayerRow => player != null);
 
-      const ratingA = stateA.rating;
-      const ratingB = stateB.rating;
+      if (
+        teamAPlayers.length !== details.teamAPlayerIds.length ||
+        teamBPlayers.length !== details.teamBPlayerIds.length
+      ) {
+        return;
+      }
 
-      const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-      const expectedB = 1 - expectedA;
+      const ratings = new Map<PlayerRow["id"], number>();
+      [...teamAPlayers, ...teamBPlayers].forEach((player) => {
+        const state = ratingState.get(player.id);
+        if (state) {
+          ratings.set(player.id, state.rating);
+        }
+      });
 
-      const actualA = match.winnerId === playerA.id ? 1 : 0;
-      const actualB = 1 - actualA;
+      const ratingResult = calculateTeamMatchRatingDeltas({
+        teamAPlayerIds: details.teamAPlayerIds,
+        teamBPlayerIds: details.teamBPlayerIds,
+        winnerTeam: details.winnerTeam,
+        ratings,
+        kFactor: K_FACTOR,
+      });
+      if (!ratingResult) return;
 
-      const newRatingA = ratingA + K_FACTOR * (actualA - expectedA);
-      const newRatingB = ratingB + K_FACTOR * (actualB - expectedB);
+      const participantById = new Map<
+        PlayerRow["id"],
+        {
+          player: PlayerRow;
+          team: WinnerTeam;
+          ratingBefore: number;
+          ratingAfter: number;
+          delta: number;
+        }
+      >();
 
-      stateA.rating = newRatingA;
-      stateA.matchCount += 1;
+      const applyRating = (player: PlayerRow, team: WinnerTeam) => {
+        const state = ratingState.get(player.id);
+        const delta = ratingResult.playerDeltas.get(player.id);
+        if (!state || delta == null) return;
 
-      stateB.rating = newRatingB;
-      stateB.matchCount += 1;
+        const ratingBefore = state.rating;
+        const ratingAfter = ratingBefore + delta;
+
+        state.rating = ratingAfter;
+        state.matchCount += 1;
+
+        participantById.set(player.id, {
+          player,
+          team,
+          ratingBefore,
+          ratingAfter,
+          delta,
+        });
+      };
+
+      teamAPlayers.forEach((player) => applyRating(player, "A"));
+      teamBPlayers.forEach((player) => applyRating(player, "B"));
+
+      const playerA = teamAPlayers[0];
+      const playerATeammate = teamAPlayers[1];
+      const playerB = teamBPlayers[0];
+      const playerBTeammate = teamBPlayers[1];
+
+      const playerAResult = participantById.get(playerA.id);
+      const playerATeammateResult = playerATeammate
+        ? participantById.get(playerATeammate.id)
+        : undefined;
+      const playerBResult = participantById.get(playerB.id);
+      const playerBTeammateResult = playerBTeammate
+        ? participantById.get(playerBTeammate.id)
+        : undefined;
+
+      if (!playerAResult || !playerBResult) return;
 
       summaries.push({
         match,
-        players: { a: playerA, b: playerB },
-        ratingBefore: { a: ratingA, b: ratingB },
-        ratingAfter: { a: newRatingA, b: newRatingB },
-        delta: { a: newRatingA - ratingA, b: newRatingB - ratingB },
+        isDoubles: details.isDoubles,
+        winnerTeam: details.winnerTeam,
+        teamAPlayers,
+        teamBPlayers,
+        participants: [...participantById.values()],
+        players: {
+          a: playerA,
+          b: playerB,
+          aTeammate: playerATeammate,
+          bTeammate: playerBTeammate,
+        },
+        ratingBefore: {
+          a: playerAResult.ratingBefore,
+          b: playerBResult.ratingBefore,
+          aTeammate: playerATeammateResult?.ratingBefore,
+          bTeammate: playerBTeammateResult?.ratingBefore,
+        },
+        ratingAfter: {
+          a: playerAResult.ratingAfter,
+          b: playerBResult.ratingAfter,
+          aTeammate: playerATeammateResult?.ratingAfter,
+          bTeammate: playerBTeammateResult?.ratingAfter,
+        },
+        delta: {
+          a: playerAResult.delta,
+          b: playerBResult.delta,
+          aTeammate: playerATeammateResult?.delta,
+          bTeammate: playerBTeammateResult?.delta,
+        },
       });
     });
 
