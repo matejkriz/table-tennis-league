@@ -29,6 +29,7 @@ export interface PushNotifyMatchRequest {
   readonly locale: string;
   readonly eventId: string;
   readonly playedAt: string;
+  readonly isDoubles: boolean;
   readonly playerAName: string;
   readonly playerBName: string;
   readonly winnerName: string;
@@ -53,6 +54,7 @@ export interface MatchPushEvent {
   readonly locale: string;
   readonly eventId: string;
   readonly playedAt: string;
+  readonly isDoubles: boolean;
   readonly playerAName: string;
   readonly playerBName: string;
   readonly winnerName: string;
@@ -64,6 +66,7 @@ export interface MatchPushEvent {
 
 export interface EnqueueMatchNotificationInput {
   readonly playedAt: string;
+  readonly isDoubles: boolean;
   readonly playerAName: string;
   readonly playerBName: string;
   readonly winnerName: string;

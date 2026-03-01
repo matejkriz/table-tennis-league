@@ -24,3 +24,10 @@
 - Added `Record doubles match` as a second section only when doubles is enabled.
 - Refactored `MatchRecorder` to explicit `mode` prop (`singles` / `doubles`) to avoid replacing singles behavior.
 - Redesigned doubles selectors into two team columns, removed row separator between teammate rows, and kept a team divider with a responsive stacked mobile layout.
+
+## Push notifications follow-up
+
+- Added explicit `isDoubles` to push notification contracts on frontend and API.
+- Included `isDoubles` in `MatchRecorder` enqueue payloads.
+- Updated notify-match backend validation and payload formatting so doubles pushes are clearly marked and include full team names.
+- Added tests in `api/push/notify-match.test.ts`, `src/components/MatchRecorder.test.tsx`, and `src/lib/push/client.test.ts`.
