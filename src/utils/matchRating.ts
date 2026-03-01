@@ -117,6 +117,10 @@ export interface MatchTeamDetails {
 }
 
 export const getMatchTeamDetails = (match: MatchRow): MatchTeamDetails | null => {
+  const hasA2 = Boolean(match.playerA2Id);
+  const hasB2 = Boolean(match.playerB2Id);
+  if (hasA2 !== hasB2) return null;
+
   const teamAPlayerIds = match.playerA2Id
     ? [match.playerAId, match.playerA2Id]
     : [match.playerAId];
