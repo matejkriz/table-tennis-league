@@ -11,10 +11,10 @@ const TIME_FILTER_OPTIONS: ReadonlyArray<{
   readonly value: RankingTimeFilter;
   readonly label: string;
 }> = [
-  { value: "all", label: "All players" },
-  { value: "week", label: "This week" },
-  { value: "month", label: "This month" },
-  { value: "quarter", label: "This quarter" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
+  { value: "quarter", label: "Quarter" },
+  { value: "all", label: "Anytime" },
 ];
 
 interface RankingListProps {
@@ -46,10 +46,11 @@ export const RankingList = ({ ranking, matches }: RankingListProps) => {
     <div>
       {showTimeFilters && (
         <div
-          className="mb-5 flex flex-wrap gap-2"
-          aria-label={t("Filter ranking by last match")}
+          className="mb-5 flex flex-wrap items-center gap-2"
+          aria-label={t("Last match in:")}
           role="group"
         >
+          <span className="text-xs font-medium text-black/60">{t("Last match in:")}</span>
           {TIME_FILTER_OPTIONS.map((option) => {
             const isActive = timeFilter === option.value;
             return (

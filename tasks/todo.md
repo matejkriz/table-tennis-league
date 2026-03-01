@@ -14,3 +14,9 @@
 - [x] Apply identical filtering behavior on both main and stats pages.
 - [x] Add/update tests for filtering logic and edge cases.
 - [x] Run typecheck + targeted tests, then document results in `docs/tasks/ranking-time-filter.md`.
+
+## Ranking filter label/copy follow-up
+- [x] Update ranking filter label to `Last match in:`.
+- [x] Reorder filter buttons to `Week`, `Month`, `Quarter`, `Anytime`.
+- [x] Update i18n keys for new labels.
+- [x] Run typecheck + quick regression test and document follow-up.

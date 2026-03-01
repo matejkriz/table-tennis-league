@@ -10,7 +10,7 @@ Add ranking time-filter options on both the main Match page and the Stats page, 
   - derives each player's latest match timestamp from match history summaries (`match.playedAt` + participants),
   - filters ranking entries by `all`, `week`, `month`, and `quarter` windows.
 - Updated `src/components/RankingList.tsx`:
-  - added in-component filter controls (`All players`, `This week`, `This month`, `This quarter`),
+  - added in-component filter controls (`Week`, `Month`, `Quarter`, `Anytime`) with label `Last match in:`,
   - applies derived filtering via `filterRankingByLastMatch(...)`,
   - shows a dedicated empty state for active time filters.
 - Updated routes to pass match history summaries into ranking:
@@ -34,3 +34,10 @@ Add ranking time-filter options on both the main Match page and the Stats page, 
 - No schema/database changes were introduced.
 - No extra state fields were added for "last match"; values are derived directly from existing match history data.
 - The same filtering behavior is shared on both pages by reusing the same `RankingList` + utility logic.
+
+## Follow-up: clearer filter copy
+
+- Updated filter copy in `RankingList` to make the criteria explicit:
+  - label: `Last match in:`
+  - button order and labels: `Week`, `Month`, `Quarter`, `Anytime`
+- Updated Czech translations in `src/i18n/locales/cs.json` for the new keys.
