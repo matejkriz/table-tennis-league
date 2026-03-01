@@ -7,12 +7,14 @@ import { MatchHistory } from "../components/MatchHistory";
 import { MatchRecorder } from "../components/MatchRecorder";
 import { RankingList } from "../components/RankingList";
 import type { PlayerId } from "../evolu/client";
+import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { useLeagueData } from "../hooks/useLeagueData";
 import { shouldRedirectRootToStart } from "../utils/startAccess";
 
 const MatchPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [isDoublesEnabled] = useDoublesPreference();
   const { players, ranking, matches } = useLeagueData();
   const shouldRedirectToStart = shouldRedirectRootToStart({
     matchCount: matches.length,
@@ -51,8 +53,28 @@ const MatchPage = () => {
           title={t("Record match")}
           defaultOpen={true}
         >
-          <MatchRecorder currentRatings={ratingMap} players={players} matches={matches.map(m => m.match)} />
+          <MatchRecorder
+            currentRatings={ratingMap}
+            players={players}
+            matches={matches.map((m) => m.match)}
+            mode="singles"
+          />
         </CollapsibleSection>
+
+        {isDoublesEnabled && (
+          <CollapsibleSection
+            storageKey="section-match-record-doubles-match"
+            title={t("Record doubles match")}
+            defaultOpen={true}
+          >
+            <MatchRecorder
+              currentRatings={ratingMap}
+              players={players}
+              matches={matches.map((m) => m.match)}
+              mode="doubles"
+            />
+          </CollapsibleSection>
+        )}
 
         <CollapsibleSection
           storageKey="section-match-match-history"

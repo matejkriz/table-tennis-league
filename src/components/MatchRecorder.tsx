@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
-import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { K_FACTOR, useLeagueData } from "../hooks/useLeagueData";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import {
@@ -22,16 +21,18 @@ interface MatchRecorderProps {
   readonly players: ReadonlyArray<PlayerRow>;
   readonly currentRatings: ReadonlyMap<PlayerId, number>;
   readonly matches: ReadonlyArray<MatchRow>;
+  readonly mode?: "singles" | "doubles";
 }
 
 export const MatchRecorder = ({
   players,
   currentRatings,
   matches,
+  mode = "singles",
 }: MatchRecorderProps) => {
   const { t } = useTranslation();
   const { insert } = useEvolu();
-  const [isDoublesEnabled] = useDoublesPreference();
+  const isDoublesMode = mode === "doubles";
   const { enqueueMatchNotification } = usePushNotifications();
   const leagueData = useLeagueData();
   const [playerAId, setPlayerAId] = useState<PlayerId | "">(
@@ -67,12 +68,12 @@ export const MatchRecorder = ({
   const teamSelection = useMemo(() => {
     if (!playerAId || !playerBId) return null;
 
-    const teamAPlayerIds = isDoublesEnabled
+    const teamAPlayerIds = isDoublesMode
       ? playerA2Id
         ? [playerAId, playerA2Id]
         : []
       : [playerAId];
-    const teamBPlayerIds = isDoublesEnabled
+    const teamBPlayerIds = isDoublesMode
       ? playerB2Id
         ? [playerBId, playerB2Id]
         : []
@@ -88,7 +89,7 @@ export const MatchRecorder = ({
     }
 
     return { teamAPlayerIds, teamBPlayerIds };
-  }, [isDoublesEnabled, playerA2Id, playerAId, playerB2Id, playerBId]);
+  }, [isDoublesMode, playerA2Id, playerAId, playerB2Id, playerBId]);
 
   const preview = useMemo(() => {
     if (!teamSelection) {
@@ -174,7 +175,7 @@ export const MatchRecorder = ({
       return;
     }
 
-    if (isDoublesEnabled && (!playerA2Id || !playerB2Id)) {
+    if (isDoublesMode && (!playerA2Id || !playerB2Id)) {
       setError(t("Choose four players for doubles."));
       return;
     }
@@ -182,7 +183,7 @@ export const MatchRecorder = ({
     const selectedIds = [
       playerAId,
       playerBId,
-      ...(isDoublesEnabled ? [playerA2Id, playerB2Id] : []),
+      ...(isDoublesMode ? [playerA2Id, playerB2Id] : []),
     ].filter((id): id is PlayerId => id !== "");
 
     if (new Set(selectedIds).size !== selectedIds.length) {
@@ -243,10 +244,10 @@ export const MatchRecorder = ({
       {
         playerAId,
         playerBId,
-        playerA2Id: isDoublesEnabled ? playerA2Id : null,
-        playerB2Id: isDoublesEnabled ? playerB2Id : null,
+        playerA2Id: isDoublesMode ? playerA2Id : null,
+        playerB2Id: isDoublesMode ? playerB2Id : null,
         winnerId,
-        winnerTeam: isDoublesEnabled ? winnerTeam : null,
+        winnerTeam: isDoublesMode ? winnerTeam : null,
         playedAt: playedAtResult.value,
         note: trimmedNote.length > 0 ? trimmedNote : null,
       },
@@ -273,11 +274,11 @@ export const MatchRecorder = ({
     }
   };
 
-  const minPlayersRequired = isDoublesEnabled ? 4 : 2;
+  const minPlayersRequired = isDoublesMode ? 4 : 2;
   if (players.length < minPlayersRequired) {
     return (
       <p className="py-8 text-center text-sm text-black/50">
-        {isDoublesEnabled
+        {isDoublesMode
           ? t("Add at least four players to record a doubles match.")
           : t("Add at least two players to record a match.")}
       </p>
@@ -286,49 +287,26 @@ export const MatchRecorder = ({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            {isDoublesEnabled ? t("Team A - player 1") : t("Player A")}
-          </span>
-          <select
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-            value={playerAId}
-            onChange={(event) => setPlayerAId(event.target.value as PlayerId | "")}
-          >
-            <option value="">{t("Select player")}</option>
-            {getPlayerOptions(playerAId, [playerBId, playerA2Id, playerB2Id]).map((player) => (
-              <option key={player.id} value={player.id}>
-                {player.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            {isDoublesEnabled ? t("Team B - player 1") : t("Player B")}
-          </span>
-          <select
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-            value={playerBId}
-            onChange={(event) => setPlayerBId(event.target.value as PlayerId | "")}
-          >
-            <option value="">{t("Select player")}</option>
-            {getPlayerOptions(playerBId, [playerAId, playerA2Id, playerB2Id]).map((player) => (
-              <option key={player.id} value={player.id}>
-                {player.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {isDoublesEnabled && (
-        <div className="border-t border-black/10 pt-5">
-          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-black/60">
-            {t("Second players")}
-          </p>
-          <div className="grid gap-5 sm:grid-cols-2">
+      {isDoublesMode ? (
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-5">
+            <label className="block">
+              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+                {t("Team A - player 1")}
+              </span>
+              <select
+                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+                value={playerAId}
+                onChange={(event) => setPlayerAId(event.target.value as PlayerId | "")}
+              >
+                <option value="">{t("Select player")}</option>
+                {getPlayerOptions(playerAId, [playerBId, playerA2Id, playerB2Id]).map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
                 {t("Team A - player 2")}
@@ -340,6 +318,25 @@ export const MatchRecorder = ({
               >
                 <option value="">{t("Select player")}</option>
                 {getPlayerOptions(playerA2Id, [playerAId, playerBId, playerB2Id]).map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="space-y-5 border-t border-black/10 pt-6 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+            <label className="block">
+              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+                {t("Team B - player 1")}
+              </span>
+              <select
+                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+                value={playerBId}
+                onChange={(event) => setPlayerBId(event.target.value as PlayerId | "")}
+              >
+                <option value="">{t("Select player")}</option>
+                {getPlayerOptions(playerBId, [playerAId, playerA2Id, playerB2Id]).map((player) => (
                   <option key={player.id} value={player.id}>
                     {player.name}
                   </option>
@@ -364,6 +361,43 @@ export const MatchRecorder = ({
               </select>
             </label>
           </div>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+              {t("Player A")}
+            </span>
+            <select
+              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+              value={playerAId}
+              onChange={(event) => setPlayerAId(event.target.value as PlayerId | "")}
+            >
+              <option value="">{t("Select player")}</option>
+              {getPlayerOptions(playerAId, [playerBId]).map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
+              {t("Player B")}
+            </span>
+            <select
+              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
+              value={playerBId}
+              onChange={(event) => setPlayerBId(event.target.value as PlayerId | "")}
+            >
+              <option value="">{t("Select player")}</option>
+              {getPlayerOptions(playerBId, [playerAId]).map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       )}
 
@@ -473,7 +507,7 @@ export const MatchRecorder = ({
         </label>
       )}
 
-      {!isDoublesEnabled && (playerAId || playerBId) && (
+      {!isDoublesMode && (playerAId || playerBId) && (
         <CollapsibleSection
           storageKey="match-recorder-rating-history"
           title={t("Rating history (90 days)")}
