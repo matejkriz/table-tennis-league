@@ -54,7 +54,10 @@ vi.mock("qrcode.react", () => ({
 import { StartPage } from "./start";
 
 describe("StartPage", () => {
-  const insert = vi.fn(() => ({ ok: true }));
+  const insert = vi.fn(
+    (_table: string, _data: unknown, _options?: { onComplete?: () => void }) =>
+      ({ ok: true as boolean })
+  );
   const update = vi.fn(() => ({ ok: true }));
   const restoreAppOwner = vi.fn();
 
