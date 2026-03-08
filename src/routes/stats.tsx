@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
@@ -5,12 +6,44 @@ import { CollapsibleSection } from "../components/CollapsibleSection";
 import { MatchHistory } from "../components/MatchHistory";
 import { RankingList } from "../components/RankingList";
 import { useLeagueData } from "../hooks/useLeagueData";
+import {
+  useStatsRankingFilterPreference,
+  type StatsRankingFilter,
+} from "../hooks/useStatsRankingFilterPreference";
 
-const StatsPage = () => {
+export const StatsPage = () => {
   const { t } = useTranslation();
   const { players, ranking, matches } = useLeagueData();
+  const [rankingFilter, setRankingFilter] = useStatsRankingFilterPreference();
 
   const matchCount = matches.length;
+  const filteredRanking = useMemo(() => {
+    if (rankingFilter === "all") return ranking;
+
+    const now = Date.now();
+    const windowInDays = rankingFilter === "7d" ? 7 : 30;
+    const cutoffTime = now - windowInDays * 24 * 60 * 60 * 1000;
+    const latestMatchByPlayerId = new Map<string, number>();
+
+    matches.forEach((summary) => {
+      const playedAtTime = new Date(summary.match.playedAt).getTime();
+      if (Number.isNaN(playedAtTime)) return;
+
+      summary.participants.forEach(({ player }) => {
+        const latestPlayedAtTime = latestMatchByPlayerId.get(player.id);
+        if (latestPlayedAtTime == null || playedAtTime > latestPlayedAtTime) {
+          latestMatchByPlayerId.set(player.id, playedAtTime);
+        }
+      });
+    });
+
+    return ranking.filter((entry) => {
+      const latestPlayedAtTime = latestMatchByPlayerId.get(entry.player.id);
+      return latestPlayedAtTime != null && latestPlayedAtTime >= cutoffTime;
+    });
+  }, [matches, ranking, rankingFilter]);
+  const rankingEmptyStateMessage =
+    rankingFilter === "all" ? undefined : t("No players played in this period.");
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6 pb-40 sm:px-6 sm:py-8 md:pb-8 md:pt-20">
@@ -32,7 +65,31 @@ const StatsPage = () => {
           defaultOpen={true}
           headerRight={t("STR")}
         >
-          <RankingList ranking={ranking} />
+          <fieldset
+            aria-label={t("Last played match")}
+            className="mb-5 flex flex-wrap gap-2"
+          >
+            <legend className="sr-only">{t("Last played match")}</legend>
+            {rankingFilterOptions.map((option) => (
+              <label key={option.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  name="stats-ranking-filter"
+                  value={option.value}
+                  checked={rankingFilter === option.value}
+                  onChange={() => setRankingFilter(option.value)}
+                  className="peer sr-only"
+                />
+                <span className="inline-flex rounded-full border border-black/10 px-3 py-1.5 text-sm text-black/60 transition peer-checked:border-[#F7931A] peer-checked:bg-[#F7931A] peer-checked:text-white">
+                  {t(option.label)}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <RankingList
+            ranking={filteredRanking}
+            emptyStateMessage={rankingEmptyStateMessage}
+          />
         </CollapsibleSection>
 
         <CollapsibleSection
@@ -46,6 +103,15 @@ const StatsPage = () => {
     </div>
   );
 };
+
+const rankingFilterOptions: ReadonlyArray<{
+  readonly value: StatsRankingFilter;
+  readonly label: "Last 7 days" | "Last 30 days" | "All";
+}> = [
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "all", label: "All" },
+];
 
 export const Route = createFileRoute("/stats")({
   component: StatsPage,

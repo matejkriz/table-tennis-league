@@ -54,3 +54,12 @@
 - [x] Add a regression test proving recently deleted players disappear when the 30-day window elapses while the page stays open.
 - [x] Replace the stale `useMemo([players])` time dependency in `settings.players.tsx` with deterministic expiry-driven state.
 - [x] Verify with targeted tests, `npm run typecheck`, and lints for touched files.
+
+# TODO - Stats Ranking Activity Filter
+
+- [x] Add task documentation and review notes for the persisted Stats ranking activity filter.
+- [x] Add failing route tests for the Stats page filter defaults, activity windows, persistence, and filtered empty state.
+- [x] Add a local `_uiPreference` hook for the Stats ranking filter with default `30d`.
+- [x] Implement the Stats page radio-group UI and ranking filtering by latest played match date.
+- [x] Extend `RankingList` with configurable empty-state copy and add i18n strings.
+- [x] Verify with `yarn vitest run src/routes/stats.test.tsx src/hooks/useStatsRankingFilterPreference.test.ts`, `yarn vitest run src/hooks/useLeagueData.test.ts`, and `yarn typecheck`.
