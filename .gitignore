@@ -4,3 +4,4 @@ dist
 node_modules
 .env*.local
 docs/tasks/todo.md
+tasks/todo.md

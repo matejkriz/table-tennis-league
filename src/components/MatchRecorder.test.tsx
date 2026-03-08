@@ -7,7 +7,7 @@ vi.mock("../evolu/client", () => ({
   uiPreferencesQuery: {},
   formatTypeError: vi.fn((error) => `Error: ${error.type}`),
 }));
-vi.mock("../hooks/usePushNotifications", () => ({
+vi.mock("../hooks/pushNotificationsContext", () => ({
   usePushNotifications: vi.fn(),
 }));
 vi.mock("../hooks/useLeagueData", () => ({
@@ -19,7 +19,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { PlayerId, MatchRow } from "../evolu/client";
 import { useEvolu } from "../evolu/client";
-import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePushNotifications } from "../hooks/pushNotificationsContext";
 import { useLeagueData } from "../hooks/useLeagueData";
 import { MatchRecorder } from "./MatchRecorder";
 import { createMockPlayer } from "../test/helpers";
@@ -227,13 +227,14 @@ describe("MatchRecorder", () => {
     expect(screen.getByText("Projected change")).toBeInTheDocument();
   });
 
-  it("should hide upset replay when stronger side is selected as winner", async () => {
+  it("should keep projected change visible when stronger side is selected as winner", async () => {
     const user = userEvent.setup();
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     await user.click(screen.getByRole("button", { name: /bob/i }));
+    expect(screen.getByText("Projected change")).toBeInTheDocument();
     expect(screen.queryByText("Upset replay")).not.toBeInTheDocument();
   });
 
@@ -515,7 +516,7 @@ describe("MatchRecorder", () => {
     expect(screen.queryByText("Match recorded.")).not.toBeInTheDocument();
   });
 
-  it("should not render upset replay for equal ratings", () => {
+  it("should show projected change and no upset replay for equal ratings", () => {
     const equalRatingsMap = new Map<PlayerId, number>([
       ["player1" as PlayerId, 1000],
       ["player2" as PlayerId, 1000],
@@ -525,6 +526,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers.slice(0, 2)} currentRatings={equalRatingsMap} matches={mockMatches} />
     );
 
+    expect(screen.getByText("Projected change")).toBeInTheDocument();
     expect(screen.queryByText("Upset replay")).not.toBeInTheDocument();
   });
 

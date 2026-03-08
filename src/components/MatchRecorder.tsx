@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
 import { formatTypeError, useEvolu } from "../evolu/client";
 import { K_FACTOR, useLeagueData } from "../hooks/useLeagueData";
-import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePushNotifications } from "../hooks/pushNotificationsContext";
 import {
   calculateTeamMatchRatingDeltas,
   type WinnerTeam,

@@ -36,3 +36,15 @@
 - [x] Add tests for start access rules, `/start` behavior, and updated share URL contract.
 - [ ] Verify with `yarn lint` (blocked: repository currently has no `eslint.config.*` for ESLint v9).
 - [x] Run `yarn typecheck`, targeted tests, and `yarn build`.
+
+# TODO - Player Management Follow-up Fixes
+
+- [x] Add ESLint v9 flat config at repo root so `yarn lint` works.
+- [x] Fix Czech locale string for "Rename, delete, or restore players." and remove duplicate `Restore`.
+- [x] Pluralize active player count badge in `settings.players.tsx` via i18next `count`.
+- [x] Verify with `yarn lint` and `yarn typecheck`.
+
+# TODO - Push Notifications Fast Refresh Warning
+
+- [x] Move the shared push notifications hook/context contract into a non-component module.
+- [x] Verify with `yarn lint` and `yarn typecheck`.

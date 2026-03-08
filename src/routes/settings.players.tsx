@@ -54,6 +54,13 @@ export const PlayerManagementPage = () => {
     () => splitPlayersByStatus(players, new Date()),
     [players],
   );
+  const activePlayersCountLabel = t("players_count", {
+    count: activePlayers.length,
+  });
+  const activePlayersCountFallback =
+    activePlayers.length === 1
+      ? `${activePlayers.length} player`
+      : `${activePlayers.length} players`;
 
   const handleEditStart = (player: AllPlayerRow) => {
     setEditingPlayerId(player.id);
@@ -170,7 +177,9 @@ export const PlayerManagementPage = () => {
               </p>
             </div>
             <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-medium uppercase tracking-wide text-black/60">
-              {activePlayers.length} {t("players")}
+              {activePlayersCountLabel === "players_count"
+                ? activePlayersCountFallback
+                : activePlayersCountLabel}
             </span>
           </div>
 

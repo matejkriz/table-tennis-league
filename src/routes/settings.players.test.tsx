@@ -72,6 +72,12 @@ describe("PlayerManagementPage", () => {
     expect(screen.getByText("Deleted")).toBeInTheDocument();
   });
 
+  it("pluralizes the active player count badge", () => {
+    render(<PlayerManagementPage />);
+
+    expect(screen.getByText("1 player")).toBeInTheDocument();
+  });
+
   it("renames an active player inline", async () => {
     const user = userEvent.setup();
 

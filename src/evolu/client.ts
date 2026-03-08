@@ -142,7 +142,7 @@ evolu.subscribeError(() => {
   const error = evolu.getError();
   if (!error) return;
   alert(`Evolu error occurred. ${error}`);
-  // eslint-disable-next-line no-console
+   
   console.error(error);
 });
 
