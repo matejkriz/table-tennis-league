@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePushNotifications } from "../hooks/pushNotificationsContext";
 
 const formatPermission = (
   permission: NotificationPermission,

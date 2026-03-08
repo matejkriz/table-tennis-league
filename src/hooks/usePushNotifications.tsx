@@ -1,4 +1,4 @@
-import { createContext, use, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -20,45 +20,12 @@ import type {
   EnqueueMatchNotificationInput,
   MatchPushEvent,
 } from "../lib/push/types";
-
-interface PushNotificationsContextValue {
-  readonly isSupported: boolean;
-  readonly isEnabled: boolean;
-  readonly isSubscribed: boolean;
-  readonly permission: NotificationPermission;
-  readonly isBusy: boolean;
-  readonly hasBackgroundSync: boolean;
-  readonly error: string | null;
-  readonly statusMessage: string | null;
-  readonly enableNotifications: () => Promise<boolean>;
-  readonly disableNotifications: () => Promise<boolean>;
-  readonly reSubscribe: () => Promise<boolean>;
-  readonly sendTestNotification: () => Promise<boolean>;
-  readonly enqueueMatchNotification: (
-    input: EnqueueMatchNotificationInput,
-  ) => Promise<boolean>;
-}
+import {
+  PushNotificationsContext,
+  type PushNotificationsContextValue,
+} from "./pushNotificationsContext";
 
 const PUSH_ENABLED_STORAGE_KEY = "push-notifications-enabled-v1";
-
-const defaultContextValue: PushNotificationsContextValue = {
-  isSupported: false,
-  isEnabled: false,
-  isSubscribed: false,
-  permission: "default",
-  isBusy: false,
-  hasBackgroundSync: false,
-  error: null,
-  statusMessage: null,
-  enableNotifications: async () => false,
-  disableNotifications: async () => false,
-  reSubscribe: async () => false,
-  sendTestNotification: async () => false,
-  enqueueMatchNotification: async () => false,
-};
-
-const PushNotificationsContext =
-  createContext<PushNotificationsContextValue>(defaultContextValue);
 
 const getRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
   if (!("serviceWorker" in navigator)) return null;
@@ -273,7 +240,7 @@ export const PushNotificationsProvider = ({
     } finally {
       setIsBusy(false);
     }
-  }, [getContextFields, permission, supported]);
+  }, [getContextFields, permission, supported, t]);
 
   const disableNotifications = useCallback(async (): Promise<boolean> => {
     if (!supported) return false;
@@ -312,7 +279,7 @@ export const PushNotificationsProvider = ({
     } finally {
       setIsBusy(false);
     }
-  }, [getContextFields, supported]);
+  }, [getContextFields, supported, t]);
 
   const reSubscribe = useCallback(async (): Promise<boolean> => {
     const disabled = await disableNotifications();
@@ -359,7 +326,7 @@ export const PushNotificationsProvider = ({
       setError(
         t("Test notification failed. Check browser/site notification settings."),
       );
-      // eslint-disable-next-line no-console
+
       console.error(sendError);
       return false;
     }
@@ -393,7 +360,7 @@ export const PushNotificationsProvider = ({
       // Defensively enqueue to localStorage fallback queue so the event is not
       // lost even when Background Sync is available but its registration fails
       // or never triggers.  Server-side dedup (via eventId) prevents duplicates.
-      // eslint-disable-next-line no-console
+
       console.warn(
         "[push] sendEvent failed; enqueuing to fallback queue",
         event.eventId,
@@ -444,6 +411,3 @@ export const PushNotificationsProvider = ({
     </PushNotificationsContext.Provider>
   );
 };
-
-export const usePushNotifications = (): PushNotificationsContextValue =>
-  useContext(PushNotificationsContext);

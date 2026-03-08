@@ -10,3 +10,4 @@
 - Keep English source copy strictly English; put locale-specific terms only in translations and avoid redundant helper labels when the behavior is already standard across the app.
 - When adding a nested TanStack Router page, make the parent route a layout with an `Outlet` and move the existing page UI into an index child route; otherwise child paths can silently render the parent page only.
 - When adding new surfaces to an existing page family, reuse the app’s established card treatment for radius, border, and shadow instead of introducing a new card variant for a one-off screen.
+- In this i18n setup (no explicit `en` resource), pluralized `t(key, { count })` calls must include an English fallback path in UI code or matching keys in an English resource; otherwise users can see raw keys like `players_count`.

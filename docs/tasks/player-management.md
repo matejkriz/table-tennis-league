@@ -17,3 +17,11 @@
 - Verified with `yarn vitest run src/hooks/useLeagueData.test.ts src/utils/startAccess.test.ts src/routes/settings.test.tsx src/routes/settings.players.test.tsx`.
 - Verified with `yarn typecheck`.
 - `yarn lint` is currently blocked at the repository level because ESLint v9 cannot find an `eslint.config.js|mjs|cjs` file.
+
+## Follow-up fixes
+
+- Added root `eslint.config.js` in ESLint v9 flat-config format with JS/TypeScript setup and test-file overrides, so lint is now discoverable and runnable.
+- Updated Czech locale key `"Rename, delete, or restore players."` to distinct literal wording and removed duplicated `"Restore"` entry.
+- Updated active-player badge rendering to use `t("players_count", { count })` pluralization with an English fallback path (`1 player`, `2 players`) when no `en` locale resource is present.
+- Added a regression test for active-player badge pluralization in `src/routes/settings.players.test.tsx`.
+- Verified with `npm run test -- --run src/routes/settings.players.test.tsx`, `npm run lint` (0 errors), and `npm run typecheck`.
