@@ -129,7 +129,7 @@ describe("MatchPage", () => {
     const user = userEvent.setup();
 
     render(<MatchPage />);
-    await user.click(screen.getByRole("button", { name: "Duels" }));
+    await user.click(screen.getByRole("button", { name: "Duels history" }));
 
     expect(screen.getByText("Singles recorder")).toBeInTheDocument();
     expect(screen.queryByText("Doubles recorder")).not.toBeInTheDocument();
@@ -164,7 +164,7 @@ describe("MatchPage", () => {
     } as unknown as ReturnType<typeof useLeagueData>);
 
     const { rerender } = render(<MatchPage />);
-    await user.click(screen.getByRole("button", { name: "Duels" }));
+    await user.click(screen.getByRole("button", { name: "Duels history" }));
 
     expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerAId":"player1"');
     expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerBId":"player2"');
