@@ -248,7 +248,7 @@ export const MatchPage = () => {
 
         <CollapsibleSection
           storageKey="section-match-match-history"
-          title={t("Duels")}
+          title={t("Duels history")}
           defaultOpen={false}
         >
           <DuelsHistory matches={matches} activeSelection={activeSelection} />
