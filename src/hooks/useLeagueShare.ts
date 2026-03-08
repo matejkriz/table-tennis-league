@@ -1,23 +1,14 @@
 import * as Evolu from "@evolu/common";
-import { use, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  formatTypeError,
-  leagueSettingsQuery,
-  useEvolu,
-  useQuery,
-} from "../evolu/client";
+import { useEvolu } from "../evolu/client";
 import {
   buildShareUrl,
   decodeMnemonicShareToken,
   encodeMnemonicShareToken,
-  normalizeLeagueName,
+  extractShareTokenFromShareUrl,
 } from "../utils/mnemonicShare";
-import { useDebouncedValue } from "./useDebouncedValue";
-
-export const SHARE_LEAGUE_NAME_KEY = "share-league-name";
-const SHARE_URL_DEBOUNCE_MS = 350;
 
 export const getShareTokenFromUrl = (): string | null => {
   const params = new URLSearchParams(window.location.search);
@@ -35,66 +26,31 @@ export const clearShareTokenFromUrl = () => {
 };
 
 interface UseLeagueShareOptions {
-  /**
-   * When true, QR generation is suppressed until import succeeds.
-   * Use when a ?share= param was present at load time so the import
-   * panel takes priority over the QR display.
-   */
-  suppressUntilImported?: boolean;
-  /** Called after successful mnemonic restore, e.g. to clean the URL. */
-  onImportSuccess?: () => void;
+  readonly onImportSuccess?: () => void;
 }
 
 export const useLeagueShare = ({
-  suppressUntilImported = false,
   onImportSuccess,
 }: UseLeagueShareOptions = {}) => {
   const { t } = useTranslation();
   const evolu = useEvolu();
   const appOwner = use(evolu.appOwner);
-  const leagueSettings = useQuery(leagueSettingsQuery);
 
-  const leagueNameSetting = useMemo(
-    () => leagueSettings.find((row) => row.key === SHARE_LEAGUE_NAME_KEY),
-    [leagueSettings]
-  );
-
-  const [leagueName, setLeagueName] = useState(leagueNameSetting?.value ?? "");
   const [activeShareToken, setActiveShareToken] = useState(() =>
     getShareTokenFromUrl()
   );
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
-  const [isLoadingSharedLeague, setIsLoadingSharedLeague] = useState(false);
-
-  useEffect(() => {
-    setLeagueName(leagueNameSetting?.value ?? "");
-  }, [leagueNameSetting?.value]);
-
-  const normalizedLeagueName = normalizeLeagueName(leagueName);
-  const debouncedLeagueName = useDebouncedValue(
-    normalizedLeagueName,
-    SHARE_URL_DEBOUNCE_MS
+  const [isImportingShare, setIsImportingShare] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [lastAutoImportToken, setLastAutoImportToken] = useState<string | null>(
+    null
   );
-
-  // When suppressUntilImported is true, suppress QR generation until the
-  // share token has been consumed (activeShareToken becomes null).
-  const showShareControls =
-    !suppressUntilImported || activeShareToken === null;
 
   useEffect(() => {
     let active = true;
 
-    if (!showShareControls || !appOwner?.mnemonic || normalizedLeagueName.length === 0) {
-      setShareUrl(null);
-      return () => {
-        active = false;
-      };
-    }
-
-    // Avoid expensive crypto work until the user pauses typing.
-    // Clear stale URL immediately so the old QR/link isn't visible mid-edit.
-    if (debouncedLeagueName !== normalizedLeagueName) {
+    if (!appOwner?.mnemonic || activeShareToken !== null) {
       setShareUrl(null);
       return () => {
         active = false;
@@ -103,7 +59,6 @@ export const useLeagueShare = ({
 
     void encodeMnemonicShareToken({
       mnemonic: appOwner.mnemonic,
-      leagueName: debouncedLeagueName,
     })
       .then((result) => {
         if (!active) return;
@@ -123,44 +78,56 @@ export const useLeagueShare = ({
     return () => {
       active = false;
     };
-  }, [
-    appOwner?.mnemonic,
-    debouncedLeagueName,
-    normalizedLeagueName,
-    showShareControls,
-  ]);
+  }, [activeShareToken, appOwner?.mnemonic]);
 
-  const persistLeagueName = (rawValue: string) => {
-    const normalizedValue = normalizeLeagueName(rawValue);
-    const valueToStore = normalizedValue.length > 0 ? normalizedValue : null;
+  const importShareToken = useCallback(
+    async (token: string): Promise<boolean> => {
+    if (isImportingShare) return false;
 
-    if (leagueNameSetting) {
-      const result = evolu.update("leagueSetting", {
-        id: leagueNameSetting.id,
-        value: valueToStore,
+    setIsImportingShare(true);
+    setShareError(null);
+    try {
+      const decodeResult = await decodeMnemonicShareToken({
+        token,
       });
-      if (!result.ok) {
-        setShareError(formatTypeError(result.error));
+
+      if (!decodeResult.ok) {
+        setShareError(t("Could not decrypt shared league."));
+        return false;
       }
+
+      const mnemonicResult = Evolu.Mnemonic.from(decodeResult.value);
+      if (!mnemonicResult.ok) {
+        setShareError(
+          t("Shared league token does not contain a valid mnemonic.")
+        );
+        return false;
+      }
+
+      await evolu.restoreAppOwner(mnemonicResult.value);
+      setActiveShareToken(null);
+      setIsScannerOpen(false);
+      setLastAutoImportToken(null);
+      onImportSuccess?.();
+      return true;
+    } catch {
+      setShareError(t("Failed to restore shared league."));
+      return false;
+    } finally {
+      setIsImportingShare(false);
+    }
+    },
+    [evolu, isImportingShare, onImportSuccess, t]
+  );
+
+  useEffect(() => {
+    if (activeShareToken == null || activeShareToken === lastAutoImportToken) {
       return;
     }
 
-    const result = evolu.insert("leagueSetting", {
-      key: SHARE_LEAGUE_NAME_KEY,
-      value: valueToStore,
-    });
-    if (!result.ok) {
-      setShareError(formatTypeError(result.error));
-    }
-  };
-
-  const handleLeagueNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setLeagueName(event.target.value);
-  };
-
-  const handleLeagueNameBlur = () => {
-    persistLeagueName(leagueName);
-  };
+    setLastAutoImportToken(activeShareToken);
+    void importShareToken(activeShareToken);
+  }, [activeShareToken, importShareToken, lastAutoImportToken]);
 
   const handleCopyShareLink = async () => {
     if (!shareUrl) return;
@@ -169,8 +136,6 @@ export const useLeagueShare = ({
       await navigator.clipboard.writeText(shareUrl);
       setShareError(null);
     } catch {
-      // Clipboard API unavailable or permission denied — fall back to
-      // execCommand so the user still gets the URL on the clipboard.
       try {
         const textArea = document.createElement("textarea");
         textArea.value = shareUrl;
@@ -191,51 +156,28 @@ export const useLeagueShare = ({
     }
   };
 
-  const handleLoadSharedLeague = async () => {
-    if (!activeShareToken || isLoadingSharedLeague) return;
+  const handleScannedValue = async (value: string): Promise<boolean> => {
+    const shareTokenResult = extractShareTokenFromShareUrl(value);
 
-    setIsLoadingSharedLeague(true);
-    setShareError(null);
-    try {
-      const decodeResult = await decodeMnemonicShareToken({
-        token: activeShareToken,
-        leagueName,
-      });
-
-      if (!decodeResult.ok) {
-        setShareError(t("Could not decrypt shared league. Check league name."));
-        return;
-      }
-
-      const mnemonicResult = Evolu.Mnemonic.from(decodeResult.value);
-      if (!mnemonicResult.ok) {
-        setShareError(
-          t("Shared league token does not contain a valid mnemonic.")
-        );
-        return;
-      }
-
-      await evolu.restoreAppOwner(mnemonicResult.value);
-      setActiveShareToken(null);
-      onImportSuccess?.();
-    } catch {
-      setShareError(t("Failed to restore shared league."));
-    } finally {
-      setIsLoadingSharedLeague(false);
+    if (!shareTokenResult.ok) {
+      setShareError(t("Scanned QR code does not contain a valid share link."));
+      return false;
     }
+
+    return importShareToken(shareTokenResult.value);
   };
 
   return {
     appOwner,
-    leagueName,
-    normalizedLeagueName,
+    activeShareToken,
     shareUrl,
     shareError,
-    activeShareToken,
-    isLoadingSharedLeague,
-    handleLeagueNameChange,
-    handleLeagueNameBlur,
+    isImportingShare,
+    isScannerOpen,
+    openScanner: () => setIsScannerOpen(true),
+    closeScanner: () => setIsScannerOpen(false),
     handleCopyShareLink,
-    handleLoadSharedLeague,
+    handleScannedValue,
+    handleScannerError: (message: string) => setShareError(message),
   };
 };

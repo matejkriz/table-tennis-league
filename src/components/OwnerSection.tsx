@@ -1,6 +1,11 @@
 import * as Evolu from "@evolu/common";
 import { EvoluIdenticon } from "@evolu/react-web";
-import { IconKey, IconSparkles, IconTrash } from "@tabler/icons-react";
+import {
+  IconKey,
+  IconQrcode,
+  IconSparkles,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +15,7 @@ import {
   useLeagueShare,
 } from "../hooks/useLeagueShare";
 import { LeagueShareQR } from "./LeagueShareQR";
+import { LeagueShareScanner } from "./LeagueShareScanner";
 
 export const OwnerSection = () => {
   const { t } = useTranslation();
@@ -18,16 +24,15 @@ export const OwnerSection = () => {
 
   const {
     appOwner,
-    leagueName,
-    normalizedLeagueName,
     shareUrl,
     shareError,
-    activeShareToken,
-    handleLeagueNameChange,
-    handleLeagueNameBlur,
+    isImportingShare,
+    isScannerOpen,
+    openScanner,
+    closeScanner,
     handleCopyShareLink,
-    handleLoadSharedLeague,
-    isLoadingSharedLeague,
+    handleScannedValue,
+    handleScannerError,
   } = useLeagueShare({ onImportSuccess: clearShareTokenFromUrl });
 
   const handleRestoreClick = () => {
@@ -97,58 +102,38 @@ export const OwnerSection = () => {
           {t("Share this league by QR")}
         </p>
         <p className="mt-2 text-sm text-black/60">
-          {t("The league name is the decryption password. Share it out-of-band.")}
+          {t("Scan this QR code or copy the share link to restore this league on another device.")}
         </p>
 
-        <div className="mt-4">
-          <label
-            className="mb-2 block text-xs font-medium uppercase tracking-wider text-black/60"
-            htmlFor="league-name"
-          >
-            {t("League name")}
-          </label>
-          <input
-            autoComplete="off"
-            className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-black shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/40"
-            id="league-name"
-            maxLength={100}
-            onBlur={handleLeagueNameBlur}
-            onChange={handleLeagueNameChange}
-            placeholder={t("e.g. friday league")}
-            type="text"
-            value={leagueName}
-          />
-        </div>
-
         <LeagueShareQR
-          normalizedLeagueName={normalizedLeagueName}
           onCopyShareLink={handleCopyShareLink}
           shareUrl={shareUrl}
         />
 
-        {activeShareToken && (
-          <div className="mt-4 rounded border border-black/10 bg-[#F7931A]/5 p-4">
-            <p className="text-sm font-medium text-black">
-              {t("Shared league link detected")}
-            </p>
-            <p className="mt-1 text-sm text-black/60">
-              {t("Enter the league name and load the shared league on this device.")}
-            </p>
-            <div className="mt-3 flex items-center gap-3">
-              <button
-                className="rounded-full bg-[#F7931A] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#F7931A]/90 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => {
-                  void handleLoadSharedLeague();
-                }}
-                type="button"
-                disabled={isLoadingSharedLeague}
-                aria-busy={isLoadingSharedLeague}
-              >
-                {t("Load shared league")}
-              </button>
-            </div>
-          </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-2 text-xs font-semibold text-black shadow-sm transition-all hover:border-black/20 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F7931A]/30"
+            onClick={openScanner}
+            type="button"
+          >
+            <IconQrcode className="h-4 w-4" />
+            {t("Scan QR code")}
+          </button>
+        </div>
+
+        {isImportingShare && (
+          <p className="mt-4 text-sm text-black/60">
+            {t("Loading shared league...")}
+          </p>
         )}
+
+        <LeagueShareScanner
+          isOpen={isScannerOpen}
+          onClose={closeScanner}
+          onScanError={handleScannerError}
+          onScanResult={handleScannedValue}
+        />
+
         {shareError && (
           <p className="mt-3 text-sm text-red-600">{shareError}</p>
         )}

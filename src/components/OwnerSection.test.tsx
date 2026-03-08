@@ -7,6 +7,10 @@ import { encodeMnemonicShareToken } from "../utils/mnemonicShare";
 
 const mockUseEvolu = vi.fn();
 const mockUseQuery = vi.fn();
+const mockHtml5QrcodeStart = vi.fn((..._args: unknown[]) => Promise.resolve(null));
+const mockHtml5QrcodeStop = vi.fn((..._args: unknown[]) => Promise.resolve());
+const mockHtml5QrcodeClear = vi.fn((..._args: unknown[]) => undefined);
+const mockHtml5QrcodeScanFile = vi.fn((..._args: unknown[]) => Promise.resolve(""));
 
 vi.mock("../evolu/client", () => ({
   authResult: { username: "Test User" },
@@ -25,6 +29,29 @@ vi.mock("qrcode.react", () => ({
   QRCodeSVG: ({ value }: { value: string }) => (
     <div data-testid="qr-code" data-value={value} />
   ),
+}));
+
+vi.mock("html5-qrcode", () => ({
+  Html5QrcodeSupportedFormats: {
+    QR_CODE: 0,
+  },
+  Html5Qrcode: class {
+    public isScanning = false;
+
+    public start = (...args: unknown[]) => {
+      this.isScanning = true;
+      return mockHtml5QrcodeStart(...args);
+    };
+
+    public stop = (...args: unknown[]) => {
+      this.isScanning = false;
+      return mockHtml5QrcodeStop(...args);
+    };
+
+    public clear = (...args: unknown[]) => mockHtml5QrcodeClear(...args);
+
+    public scanFile = (...args: unknown[]) => mockHtml5QrcodeScanFile(...args);
+  },
 }));
 
 import { OwnerSection } from "./OwnerSection";
@@ -81,75 +108,76 @@ describe("OwnerSection share/import", () => {
         writeText: vi.fn(() => Promise.resolve()),
       },
     });
+
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockImplementation(() => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
   });
 
-  it("renders share input and QR code when mnemonic and league name are available", async () => {
+  it("renders QR share controls without the league name field", async () => {
     renderSection();
 
-    expect(await screen.findByLabelText("League name")).toHaveValue("my league");
     expect(await screen.findByTestId("qr-code")).toBeInTheDocument();
     expect(
       await screen.findByRole("button", { name: "Copy share link" })
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scan QR code" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("League name")).not.toBeInTheDocument();
   });
 
-  it("shows import panel when share query param exists", async () => {
-    window.history.replaceState({}, "", "/settings?share=test-token");
+  it("opens desktop scanner with file import instead of camera preview", async () => {
+    const user = userEvent.setup();
     renderSection();
 
-    expect(await screen.findByText("Shared league link detected")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Load shared league" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Scan QR code" }));
+
+    expect(screen.getByText("Upload QR image")).toBeInTheDocument();
+    expect(screen.getByLabelText("Choose QR image")).toBeInTheDocument();
+    expect(mockHtml5QrcodeStart).not.toHaveBeenCalled();
   });
 
-  it("restores app owner and clears share param on successful import", async () => {
+  it("restores app owner from a scanned QR image file", async () => {
     const encoded = await encodeMnemonicShareToken({
       mnemonic:
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-      leagueName: "my league",
     });
     expect(encoded.ok).toBe(true);
     if (!encoded.ok) return;
 
-    window.history.replaceState({}, "", `/settings?share=${encoded.value}`);
-    mockUseQuery.mockReturnValue([]);
-
+    mockHtml5QrcodeScanFile.mockResolvedValue(
+      `https://example.com/start?share=${encoded.value}`
+    );
     const user = userEvent.setup();
     renderSection();
 
-    const input = await screen.findByLabelText("League name");
-    await user.type(input, "my league");
-    await user.click(screen.getByRole("button", { name: "Load shared league" }));
+    await user.click(await screen.findByRole("button", { name: "Scan QR code" }));
+    const fileInput = screen.getByLabelText("Choose QR image");
+    await user.upload(fileInput, new File(["qr"], "share.png", { type: "image/png" }));
 
     await waitFor(() => {
       expect(restoreAppOwner).toHaveBeenCalledWith(
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
       );
     });
-    expect(window.location.search).toBe("");
   });
 
-  it("shows inline error and does not restore on invalid decryption", async () => {
-    const encoded = await encodeMnemonicShareToken({
-      mnemonic:
-        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-      leagueName: "correct league",
-    });
-    expect(encoded.ok).toBe(true);
-    if (!encoded.ok) return;
-
-    window.history.replaceState({}, "", `/settings?share=${encoded.value}`);
-    mockUseQuery.mockReturnValue([]);
+  it("shows inline error and does not restore when scanned file is not a share URL", async () => {
+    mockHtml5QrcodeScanFile.mockResolvedValue("https://example.com/not-a-share");
     const user = userEvent.setup();
-
     renderSection();
 
-    const input = await screen.findByLabelText("League name");
-    await user.type(input, "wrong league");
-    await user.click(screen.getByRole("button", { name: "Load shared league" }));
+    await user.click(await screen.findByRole("button", { name: "Scan QR code" }));
+    const fileInput = screen.getByLabelText("Choose QR image");
+    await user.upload(fileInput, new File(["qr"], "invalid.png", { type: "image/png" }));
 
     await waitFor(() => {
       expect(
-        screen.getByText("Could not decrypt shared league. Check league name.")
+        screen.getByText("Scanned QR code does not contain a valid share link.")
       ).toBeInTheDocument();
     });
     expect(restoreAppOwner).not.toHaveBeenCalled();

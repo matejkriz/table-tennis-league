@@ -437,7 +437,7 @@ Run tests in watch mode during development for instant feedback on changes.
 - Never mark a task complete without proving it works
 - Diff behavior between main and your changes when relevant
 - Ask yourself: "Would a staff engineer approve this?"
-- Run tests, check logs, demonstrate correctness
+- Run tests, typecheck, lint, check logs, demonstrate correctness
 
 ### Demand Elegance (Balanced)
 

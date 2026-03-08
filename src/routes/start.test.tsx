@@ -7,8 +7,10 @@ const mockNavigate = vi.fn();
 const mockUseEvolu = vi.fn();
 const mockUseQuery = vi.fn();
 const mockUseLeagueData = vi.fn();
-const mockDecodeMnemonicShareToken = vi.fn();
-const mockEncodeMnemonicShareToken = vi.fn();
+const mockHtml5QrcodeStart = vi.fn((..._args: unknown[]) => Promise.resolve(null));
+const mockHtml5QrcodeStop = vi.fn((..._args: unknown[]) => Promise.resolve());
+const mockHtml5QrcodeClear = vi.fn((..._args: unknown[]) => undefined);
+let lastScanSuccess: ((decodedText: string) => void) | null = null;
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof import("@tanstack/react-router")>(
@@ -32,25 +34,37 @@ vi.mock("../hooks/useLeagueData", () => ({
   useLeagueData: () => mockUseLeagueData(),
 }));
 
-vi.mock("../utils/mnemonicShare", async () => {
-  const actual = await vi.importActual<typeof import("../utils/mnemonicShare")>(
-    "../utils/mnemonicShare"
-  );
-  return {
-    ...actual,
-    encodeMnemonicShareToken: (...args: unknown[]) =>
-      mockEncodeMnemonicShareToken(...args),
-    decodeMnemonicShareToken: (...args: unknown[]) =>
-      mockDecodeMnemonicShareToken(...args),
-  };
-});
-
 vi.mock("qrcode.react", () => ({
   QRCodeSVG: ({ value }: { value: string }) => (
     <div data-testid="qr-code" data-value={value} />
   ),
 }));
 
+vi.mock("html5-qrcode", () => ({
+  Html5QrcodeSupportedFormats: {
+    QR_CODE: 0,
+  },
+  Html5Qrcode: class {
+    public isScanning = false;
+
+    public start = (
+      ...args: [unknown, unknown, (decodedText: string) => void, unknown]
+    ) => {
+      this.isScanning = true;
+      lastScanSuccess = args[2];
+      return mockHtml5QrcodeStart(...args);
+    };
+
+    public stop = (...args: unknown[]) => {
+      this.isScanning = false;
+      return mockHtml5QrcodeStop(...args);
+    };
+
+    public clear = (...args: unknown[]) => mockHtml5QrcodeClear(...args);
+  },
+}));
+
+import { encodeMnemonicShareToken } from "../utils/mnemonicShare";
 import { StartPage } from "./start";
 
 describe("StartPage", () => {
@@ -75,6 +89,7 @@ describe("StartPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.history.replaceState({}, "", "/start");
+    lastScanSuccess = null;
 
     const appOwnerValue = {
       id: "owner-1",
@@ -104,21 +119,24 @@ describe("StartPage", () => {
       playersById: new Map(),
     });
 
-    mockEncodeMnemonicShareToken.mockResolvedValue({ ok: true, value: "token-1" });
-    mockDecodeMnemonicShareToken.mockResolvedValue({
-      ok: true,
-      value:
-        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockImplementation(() => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
     });
   });
 
   it("renders share controls and fixed-rating player form in startup mode without share param", async () => {
     await renderPage();
 
-    expect(await screen.findByLabelText("League name")).toBeInTheDocument();
     expect(await screen.findByTestId("qr-code")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scan QR code" })).toBeInTheDocument();
     expect(screen.getByLabelText("Your name")).toBeInTheDocument();
     expect(screen.queryByLabelText("Initial rating")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("League name")).not.toBeInTheDocument();
   });
 
   it("redirects to / when /start is visited without share param and startup is complete", async () => {
@@ -136,51 +154,36 @@ describe("StartPage", () => {
     });
   });
 
-  it("asks for league name immediately when share param exists", async () => {
-    window.history.replaceState({}, "", "/start?share=abc");
-
-    await renderPage();
-
-    expect(await screen.findByText("Shared league link detected")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Load shared league" })).toBeInTheDocument();
-  });
-
-  it("shows retry error when share decrypt fails", async () => {
-    window.history.replaceState({}, "", "/start?share=abc");
-    mockDecodeMnemonicShareToken.mockResolvedValue({
-      ok: false,
-      error: { type: "DecryptionFailed" },
+  it("auto-imports a shared league from the URL and asks user to add themselves", async () => {
+    const encoded = await encodeMnemonicShareToken({
+      mnemonic:
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
     });
+    expect(encoded.ok).toBe(true);
+    if (!encoded.ok) return;
 
-    const user = userEvent.setup();
-    await renderPage();
-
-    await user.type(await screen.findByLabelText("League name"), "wrong");
-    await user.click(screen.getByRole("button", { name: "Load shared league" }));
-
-    expect(
-      await screen.findByText("Could not decrypt shared league. Check league name.")
-    ).toBeInTheDocument();
-    expect(restoreAppOwner).not.toHaveBeenCalled();
-  });
-
-  it("loads share and then asks user to add themselves", async () => {
-    window.history.replaceState({}, "", "/start?share=abc");
-    const user = userEvent.setup();
+    window.history.replaceState({}, "", `/start?share=${encoded.value}`);
 
     await renderPage();
-
-    await user.type(await screen.findByLabelText("League name"), "my league");
-    await user.click(screen.getByRole("button", { name: "Load shared league" }));
 
     await waitFor(() => {
-      expect(restoreAppOwner).toHaveBeenCalled();
+      expect(restoreAppOwner).toHaveBeenCalledWith(
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+      );
     });
     expect(await screen.findByText("Add yourself to this league")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Load shared league" })).not.toBeInTheDocument();
   });
 
   it("adds player with fixed 1000 rating and redirects after share flow", async () => {
-    window.history.replaceState({}, "", "/start?share=abc");
+    const encoded = await encodeMnemonicShareToken({
+      mnemonic:
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    });
+    expect(encoded.ok).toBe(true);
+    if (!encoded.ok) return;
+
+    window.history.replaceState({}, "", `/start?share=${encoded.value}`);
     insert.mockImplementation(
       (_table: string, _data: unknown, options?: { onComplete?: () => void }) => {
         options?.onComplete?.();
@@ -190,9 +193,6 @@ describe("StartPage", () => {
 
     const user = userEvent.setup();
     await renderPage();
-
-    await user.type(await screen.findByLabelText("League name"), "my league");
-    await user.click(screen.getByRole("button", { name: "Load shared league" }));
 
     await user.type(await screen.findByLabelText("Your name"), "Alice");
     await user.click(screen.getByRole("button", { name: "Add yourself and continue" }));
@@ -204,6 +204,42 @@ describe("StartPage", () => {
     );
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: "/" });
+    });
+  });
+
+  it("starts camera scanning on coarse-pointer devices and restores after scan", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockImplementation(() => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+
+    const encoded = await encodeMnemonicShareToken({
+      mnemonic:
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    });
+    expect(encoded.ok).toBe(true);
+    if (!encoded.ok) return;
+
+    const user = userEvent.setup();
+    await renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Scan QR code" }));
+
+    expect(mockHtml5QrcodeStart).toHaveBeenCalledTimes(1);
+    expect(lastScanSuccess).not.toBeNull();
+    await act(async () => {
+      lastScanSuccess?.(`https://example.com/start?share=${encoded.value}`);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(restoreAppOwner).toHaveBeenCalledWith(
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+      );
     });
   });
 

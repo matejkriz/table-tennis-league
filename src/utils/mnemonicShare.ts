@@ -1,19 +1,14 @@
 import { err, ok, type Result } from "@evolu/common";
 import { deflateSync, inflateSync } from "fflate";
 
-const SHARE_TOKEN_VERSION = 1;
-const SHARE_TOKEN_MIN_LENGTH = 30 + 16; // header + minimum AES-GCM auth tag
+const SHARE_TOKEN_VERSION = 2;
+const SHARE_TOKEN_MIN_LENGTH = 14 + 16; // header + minimum AES-GCM auth tag
 const SHARE_TOKEN_COMPRESSED_FLAG = 1;
-const PBKDF2_ITERATIONS = 250_000;
-const SALT_SIZE = 16;
 const IV_SIZE = 12;
+const QR_SHARE_SECRET = "qr-share-secret-7f5m2k9q1x8v4n6p3r0s2t7u9w1y4z6";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder("utf-8", { fatal: true });
-
-interface InvalidLeagueNameError {
-  readonly type: "InvalidLeagueName";
-}
 
 interface ShareEncryptionFailedError {
   readonly type: "ShareEncryptionFailed";
@@ -36,23 +31,26 @@ interface DecompressionFailedError {
   readonly type: "DecompressionFailed";
 }
 
-export type ShareEncodeError = InvalidLeagueNameError | ShareEncryptionFailedError;
+interface InvalidShareUrlError {
+  readonly type: "InvalidShareUrl";
+}
+
+export type ShareEncodeError = ShareEncryptionFailedError;
 
 export type ShareDecodeError =
-  | InvalidLeagueNameError
   | InvalidTokenError
   | UnsupportedVersionError
   | DecryptionFailedError
   | DecompressionFailedError;
 
+export type ShareUrlDecodeError = InvalidShareUrlError;
+
 interface EncodeMnemonicShareTokenInput {
   readonly mnemonic: string;
-  readonly leagueName: string;
 }
 
 interface DecodeMnemonicShareTokenInput {
   readonly token: string;
-  readonly leagueName: string;
 }
 
 const toBase64Url = (bytes: Uint8Array): string => {
@@ -84,33 +82,42 @@ const fromBase64Url = (value: string): Result<Uint8Array, InvalidTokenError> => 
   }
 };
 
-const deriveKey = async (
-  normalizedLeagueName: string,
-  salt: Uint8Array<ArrayBufferLike>
-): Promise<CryptoKey> => {
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    textEncoder.encode(normalizedLeagueName),
-    { name: "PBKDF2" },
-    false,
-    ["deriveKey"]
-  );
+let shareKeyPromise: Promise<CryptoKey> | null = null;
 
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt as Uint8Array<ArrayBuffer>,
-      iterations: PBKDF2_ITERATIONS,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
+const getShareKey = async (): Promise<CryptoKey> => {
+  if (shareKeyPromise) {
+    return shareKeyPromise;
+  }
+
+  shareKeyPromise = crypto.subtle
+    .digest("SHA-256", textEncoder.encode(QR_SHARE_SECRET))
+    .then((hashBuffer) =>
+      crypto.subtle.importKey(
+        "raw",
+        hashBuffer,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      )
+    );
+
+  return shareKeyPromise;
 };
 
-const encodePayload = (payload: Uint8Array): { readonly bytes: Uint8Array; readonly compressed: boolean } => {
+const deriveDeterministicIv = async (
+  mnemonic: string
+): Promise<Uint8Array<ArrayBuffer>> => {
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    textEncoder.encode(`qr-share:v2:${mnemonic}`)
+  );
+
+  return new Uint8Array(hashBuffer).slice(0, IV_SIZE) as Uint8Array<ArrayBuffer>;
+};
+
+const encodePayload = (
+  payload: Uint8Array
+): { readonly bytes: Uint8Array; readonly compressed: boolean } => {
   const compressed = deflateSync(payload);
 
   if (compressed.length < payload.length) {
@@ -126,24 +133,14 @@ const encodePayload = (payload: Uint8Array): { readonly bytes: Uint8Array; reado
   };
 };
 
-export const normalizeLeagueName = (value: string): string =>
-  value.trim().toLowerCase();
-
 export const encodeMnemonicShareToken = async (
   input: EncodeMnemonicShareTokenInput
 ): Promise<Result<string, ShareEncodeError>> => {
-  const normalizedLeagueName = normalizeLeagueName(input.leagueName);
-
-  if (normalizedLeagueName.length === 0) {
-    return err({ type: "InvalidLeagueName" });
-  }
-
   try {
     const payload = textEncoder.encode(input.mnemonic);
     const encodedPayload = encodePayload(payload);
-    const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
-    const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
-    const key = await deriveKey(normalizedLeagueName, salt);
+    const iv = await deriveDeterministicIv(input.mnemonic);
+    const key = await getShareKey();
 
     const encryptedBuffer = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv },
@@ -151,13 +148,12 @@ export const encodeMnemonicShareToken = async (
       encodedPayload.bytes as Uint8Array<ArrayBuffer>
     );
     const encrypted = new Uint8Array(encryptedBuffer);
-    const output = new Uint8Array(30 + encrypted.length);
+    const output = new Uint8Array(14 + encrypted.length);
 
     output[0] = SHARE_TOKEN_VERSION;
     output[1] = encodedPayload.compressed ? SHARE_TOKEN_COMPRESSED_FLAG : 0;
-    output.set(salt, 2);
-    output.set(iv, 18);
-    output.set(encrypted, 30);
+    output.set(iv, 2);
+    output.set(encrypted, 14);
 
     return ok(toBase64Url(output));
   } catch {
@@ -168,12 +164,6 @@ export const encodeMnemonicShareToken = async (
 export const decodeMnemonicShareToken = async (
   input: DecodeMnemonicShareTokenInput
 ): Promise<Result<string, ShareDecodeError>> => {
-  const normalizedLeagueName = normalizeLeagueName(input.leagueName);
-
-  if (normalizedLeagueName.length === 0) {
-    return err({ type: "InvalidLeagueName" });
-  }
-
   const tokenBytesResult = fromBase64Url(input.token);
   if (!tokenBytesResult.ok) return tokenBytesResult;
 
@@ -189,12 +179,11 @@ export const decodeMnemonicShareToken = async (
 
   const flags = tokenBytes[1];
   const isCompressed = (flags & SHARE_TOKEN_COMPRESSED_FLAG) === SHARE_TOKEN_COMPRESSED_FLAG;
-  const salt = tokenBytes.slice(2, 18);
-  const iv = tokenBytes.slice(18, 30);
-  const ciphertext = tokenBytes.slice(30);
+  const iv = tokenBytes.slice(2, 14);
+  const ciphertext = tokenBytes.slice(14);
 
   try {
-    const key = await deriveKey(normalizedLeagueName, salt);
+    const key = await getShareKey();
     const decryptedBuffer = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv },
       key,
@@ -213,6 +202,27 @@ export const decodeMnemonicShareToken = async (
     return ok(textDecoder.decode(payload as Uint8Array<ArrayBuffer>));
   } catch {
     return err({ type: "DecryptionFailed" });
+  }
+};
+
+export const extractShareTokenFromShareUrl = (
+  value: string
+): Result<string, ShareUrlDecodeError> => {
+  try {
+    const parsedUrl = new URL(value, window.location.origin);
+    const shareToken = parsedUrl.searchParams.get("share");
+
+    if (
+      shareToken == null ||
+      shareToken.length === 0 ||
+      !["http:", "https:"].includes(parsedUrl.protocol)
+    ) {
+      return err({ type: "InvalidShareUrl" });
+    }
+
+    return ok(shareToken);
+  } catch {
+    return err({ type: "InvalidShareUrl" });
   }
 };
 
