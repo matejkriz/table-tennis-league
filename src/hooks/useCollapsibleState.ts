@@ -2,6 +2,7 @@ import * as Evolu from "@evolu/common";
 import { useCallback, useMemo } from "react";
 
 import {
+  formatTypeError,
   uiPreferencesQuery,
   useEvolu,
   useQuery,
@@ -14,7 +15,7 @@ import {
  *
  * @param key - Unique identifier for the section (e.g., "section-home-ranking")
  * @param defaultOpen - Whether the section should be open by default
- * @returns [isOpen, toggle] - Current state and toggle function
+ * @returns [isOpen, toggle, setOpen] - Current state, toggle function, and explicit setter
  */
 export function useCollapsibleState(
   key: string,
@@ -44,7 +45,10 @@ export function useCollapsibleState(
           isOpen: newValue,
         });
         if (!result.ok) {
-          console.error("Failed to update UI preference:", result.error);
+          console.error(
+            "Failed to update UI preference:",
+            formatTypeError(result.error),
+          );
         }
         return;
       }
@@ -54,7 +58,10 @@ export function useCollapsibleState(
         isOpen: newValue,
       });
       if (!result.ok) {
-        console.error("Failed to insert UI preference:", result.error);
+        console.error(
+          "Failed to insert UI preference:",
+          formatTypeError(result.error),
+        );
       }
     },
     [insert, key, preference, update],
