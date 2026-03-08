@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
-import { matchesQuery, playersQuery, useQuery } from "../evolu/client";
-import type { MatchRow, PlayerRow } from "../evolu/client";
+import { allPlayersQuery, matchesQuery, playersQuery, useQuery } from "../evolu/client";
+import type { AllPlayerRow, MatchRow, PlayerRow } from "../evolu/client";
 import {
   calculateTeamMatchRatingDeltas,
   getMatchTeamDetails,
@@ -58,27 +58,28 @@ export interface RankingEntry {
 
 export interface LeagueData {
   readonly players: ReadonlyArray<PlayerRow>;
-  readonly playersById: Map<PlayerRow["id"], PlayerRow>;
+  readonly playersById: Map<AllPlayerRow["id"], AllPlayerRow>;
   readonly matches: ReadonlyArray<MatchSummary>;
   readonly ranking: ReadonlyArray<RankingEntry>;
 }
 
 export const useLeagueData = (): LeagueData => {
   const players = useQuery(playersQuery);
+  const allPlayers = useQuery(allPlayersQuery);
   const matches = useQuery(matchesQuery);
 
   return useMemo(() => {
-    const playersById = new Map<PlayerRow["id"], PlayerRow>();
-    players.forEach((player) => {
+    const playersById = new Map<AllPlayerRow["id"], AllPlayerRow>();
+    allPlayers.forEach((player) => {
       playersById.set(player.id, player);
     });
 
     const ratingState = new Map<
-      PlayerRow["id"],
+      AllPlayerRow["id"],
       { rating: number; initial: number; matchCount: number }
     >();
 
-    players.forEach((player) => {
+    allPlayers.forEach((player) => {
       ratingState.set(player.id, {
         rating: player.initialRating,
         initial: player.initialRating,
@@ -98,10 +99,10 @@ export const useLeagueData = (): LeagueData => {
 
       const teamAPlayers = details.teamAPlayerIds
         .map((id) => playersById.get(id))
-        .filter((player): player is PlayerRow => player != null);
+        .filter((player): player is AllPlayerRow => player != null);
       const teamBPlayers = details.teamBPlayerIds
         .map((id) => playersById.get(id))
-        .filter((player): player is PlayerRow => player != null);
+        .filter((player): player is AllPlayerRow => player != null);
 
       if (
         teamAPlayers.length !== details.teamAPlayerIds.length ||
@@ -138,7 +139,7 @@ export const useLeagueData = (): LeagueData => {
         }
       >();
 
-      const applyRating = (player: PlayerRow, team: WinnerTeam) => {
+      const applyRating = (player: AllPlayerRow, team: WinnerTeam) => {
         const state = ratingState.get(player.id);
         const delta = ratingResult.playerDeltas.get(player.id);
         if (!state || delta == null) return;
@@ -228,5 +229,5 @@ export const useLeagueData = (): LeagueData => {
       matches: summaries,
       ranking,
     } satisfies LeagueData;
-  }, [matches, players]);
+  }, [allPlayers, matches, players]);
 };

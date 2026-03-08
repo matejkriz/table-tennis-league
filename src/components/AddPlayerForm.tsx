@@ -1,7 +1,8 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { formatTypeError, useEvolu } from "../evolu/client";
+import { SuccessToast } from "./SuccessToast";
 
 const DEFAULT_RATING = "1000";
 
@@ -11,6 +12,15 @@ export const AddPlayerForm = () => {
   const [name, setName] = useState("");
   const [rating, setRating] = useState(DEFAULT_RATING);
   const [error, setError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!successToast) return;
+    const timeoutId = window.setTimeout(() => {
+      setSuccessToast(null);
+    }, 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [successToast]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,6 +44,7 @@ export const AddPlayerForm = () => {
         onComplete: () => {
           setName("");
           setRating(DEFAULT_RATING);
+          setSuccessToast(t("Player added."));
         },
       },
     );
@@ -85,6 +96,7 @@ export const AddPlayerForm = () => {
           {t("Add player")}
         </button>
       </div>
+      {successToast ? <SuccessToast message={successToast} /> : null}
     </form>
   );
 };
