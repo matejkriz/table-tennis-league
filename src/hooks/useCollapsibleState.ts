@@ -19,7 +19,7 @@ import {
 export function useCollapsibleState(
   key: string,
   defaultOpen: boolean
-): [boolean, () => void] {
+): [boolean, () => void, (open: boolean) => void] {
   const { insert, update } = useEvolu();
   const rows = useQuery(uiPreferencesQuery);
 
@@ -34,20 +34,21 @@ export function useCollapsibleState(
     ? preference.isOpen === Evolu.sqliteTrue
     : defaultOpen;
 
-  const toggle = useCallback(() => {
-    const newValue = !isOpen ? Evolu.sqliteTrue : Evolu.sqliteFalse;
+  const setOpen = useCallback(
+    (open: boolean) => {
+      const newValue = open ? Evolu.sqliteTrue : Evolu.sqliteFalse;
 
-    if (preference) {
-      // Update existing preference
-      const result = update("_uiPreference", {
-        id: preference.id as UiPreferenceId,
-        isOpen: newValue,
-      });
-      if (!result.ok) {
-        console.error("Failed to update UI preference:", result.error);
+      if (preference) {
+        const result = update("_uiPreference", {
+          id: preference.id as UiPreferenceId,
+          isOpen: newValue,
+        });
+        if (!result.ok) {
+          console.error("Failed to update UI preference:", result.error);
+        }
+        return;
       }
-    } else {
-      // Create new preference
+
       const result = insert("_uiPreference", {
         key,
         isOpen: newValue,
@@ -55,8 +56,13 @@ export function useCollapsibleState(
       if (!result.ok) {
         console.error("Failed to insert UI preference:", result.error);
       }
-    }
-  }, [isOpen, preference, key, insert, update]);
+    },
+    [insert, key, preference, update],
+  );
 
-  return [isOpen, toggle];
+  const toggle = useCallback(() => {
+    setOpen(!isOpen);
+  }, [isOpen, setOpen]);
+
+  return [isOpen, toggle, setOpen];
 }

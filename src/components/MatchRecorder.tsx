@@ -64,13 +64,33 @@ interface MatchRecorderProps {
   readonly currentRatings: ReadonlyMap<PlayerId, number>;
   readonly matches: ReadonlyArray<MatchRow>;
   readonly mode?: "singles" | "doubles";
+  readonly onSelectionChange?: (selection: MatchRecorderSelection) => void;
 }
+
+export interface MatchRecorderSinglesSelection {
+  readonly mode: "singles";
+  readonly playerAId: PlayerId | "";
+  readonly playerBId: PlayerId | "";
+}
+
+export interface MatchRecorderDoublesSelection {
+  readonly mode: "doubles";
+  readonly playerAId: PlayerId | "";
+  readonly playerA2Id: PlayerId | "";
+  readonly playerBId: PlayerId | "";
+  readonly playerB2Id: PlayerId | "";
+}
+
+export type MatchRecorderSelection =
+  | MatchRecorderSinglesSelection
+  | MatchRecorderDoublesSelection;
 
 export const MatchRecorder = ({
   players,
   currentRatings,
   matches,
   mode = "singles",
+  onSelectionChange,
 }: MatchRecorderProps) => {
   const { t } = useTranslation();
   const { insert } = useEvolu();
@@ -97,6 +117,34 @@ export const MatchRecorder = ({
     }, 3000);
     return () => window.clearTimeout(timeoutId);
   }, [successToast]);
+
+  useEffect(() => {
+    if (!onSelectionChange) return;
+
+    if (isDoublesMode) {
+      onSelectionChange({
+        mode: "doubles",
+        playerAId,
+        playerA2Id,
+        playerBId,
+        playerB2Id,
+      });
+      return;
+    }
+
+    onSelectionChange({
+      mode: "singles",
+      playerAId,
+      playerBId,
+    });
+  }, [
+    isDoublesMode,
+    onSelectionChange,
+    playerA2Id,
+    playerAId,
+    playerB2Id,
+    playerBId,
+  ]);
 
   const playersById = useMemo(() => {
     const map = new Map<PlayerId, PlayerRow>();
@@ -432,10 +480,10 @@ export const MatchRecorder = ({
                 // Inline styles for dynamic colors
                 const selectedStyles = isSelected
                   ? {
-                      borderColor: color,
-                      backgroundColor: `${color}1A`, // 10% opacity in hex
-                      boxShadow: `0 10px 15px -3px ${color}33, 0 4px 6px -4px ${color}33`,
-                    }
+                    borderColor: color,
+                    backgroundColor: `${color}1A`, // 10% opacity in hex
+                    boxShadow: `0 10px 15px -3px ${color}33, 0 4px 6px -4px ${color}33`,
+                  }
                   : {};
 
                 const iconStyles = isSelected
@@ -449,11 +497,10 @@ export const MatchRecorder = ({
                     key={item.id}
                     type="button"
                     onClick={() => setWinnerTeam(item.id)}
-                    className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-center transition-all ${
-                      !isSelected
-                        ? "border-black/10 bg-white hover:border-black/20 hover:bg-black/5"
-                        : ""
-                    }`}
+                    className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-center transition-all ${!isSelected
+                      ? "border-black/10 bg-white hover:border-black/20 hover:bg-black/5"
+                      : ""
+                      }`}
                     style={selectedStyles}
                   >
                     <div
@@ -469,9 +516,8 @@ export const MatchRecorder = ({
                       )}
                     </div>
                     <span
-                      className={`text-lg transition-all ${
-                        isSelected ? "font-bold" : "font-medium text-black/70"
-                      }`}
+                      className={`text-lg transition-all ${isSelected ? "font-bold" : "font-medium text-black/70"
+                        }`}
                       style={isSelected ? { color } : {}}
                     >
                       {item.label}

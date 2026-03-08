@@ -1,21 +1,49 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CollapsibleSection } from "../components/CollapsibleSection";
-import { MatchHistory } from "../components/MatchHistory";
+import { DuelsHistory } from "../components/DuelsHistory";
 import { MatchRecorder } from "../components/MatchRecorder";
+import type { MatchRecorderSelection } from "../components/MatchRecorder";
 import { RankingList } from "../components/RankingList";
 import type { PlayerId } from "../evolu/client";
+import { useCollapsibleState } from "../hooks/useCollapsibleState";
 import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { useLeagueData } from "../hooks/useLeagueData";
 import { shouldRedirectRootToStart } from "../utils/startAccess";
 
-const MatchPage = () => {
+const createInitialSinglesSelection = (
+  players: ReadonlyArray<{ readonly id: PlayerId }>,
+): MatchRecorderSelection => ({
+  mode: "singles",
+  playerAId: players[0]?.id ?? "",
+  playerBId: players[1]?.id ?? "",
+});
+
+const createInitialDoublesSelection = (
+  players: ReadonlyArray<{ readonly id: PlayerId }>,
+): MatchRecorderSelection => ({
+  mode: "doubles",
+  playerAId: players[0]?.id ?? "",
+  playerA2Id: "",
+  playerBId: players[1]?.id ?? "",
+  playerB2Id: "",
+});
+
+export const MatchPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isDoublesEnabled] = useDoublesPreference();
   const { players, ranking, matches } = useLeagueData();
+  const [isSinglesOpen, , setSinglesOpen] = useCollapsibleState(
+    "section-match-record-match",
+    true,
+  );
+  const [isDoublesOpen, , setDoublesOpen] = useCollapsibleState(
+    "section-match-record-doubles-match",
+    false,
+  );
   const shouldRedirectToStart = shouldRedirectRootToStart({
     matchCount: matches.length,
     playerCount: players.length,
@@ -28,6 +56,103 @@ const MatchPage = () => {
     });
     return map;
   }, [ranking]);
+
+  const [singlesSelection, setSinglesSelection] = useState<MatchRecorderSelection>(
+    () => createInitialSinglesSelection(players),
+  );
+  const [doublesSelection, setDoublesSelection] = useState<MatchRecorderSelection>(
+    () => createInitialDoublesSelection(players),
+  );
+
+  useEffect(() => {
+    setSinglesSelection((currentSelection) => {
+      if (currentSelection.mode !== "singles") {
+        return createInitialSinglesSelection(players);
+      }
+
+      return {
+        mode: "singles",
+        playerAId:
+          currentSelection.playerAId && players.some((player) => player.id === currentSelection.playerAId)
+            ? currentSelection.playerAId
+            : players[0]?.id ?? "",
+        playerBId:
+          currentSelection.playerBId && players.some((player) => player.id === currentSelection.playerBId)
+            ? currentSelection.playerBId
+            : players[1]?.id ?? "",
+      };
+    });
+
+    setDoublesSelection((currentSelection) => {
+      if (currentSelection.mode !== "doubles") {
+        return createInitialDoublesSelection(players);
+      }
+
+      const resolvePlayerId = (playerId: PlayerId | "") =>
+        playerId && players.some((player) => player.id === playerId) ? playerId : "";
+
+      return {
+        mode: "doubles",
+        playerAId: resolvePlayerId(currentSelection.playerAId) || players[0]?.id || "",
+        playerA2Id: resolvePlayerId(currentSelection.playerA2Id),
+        playerBId: resolvePlayerId(currentSelection.playerBId) || players[1]?.id || "",
+        playerB2Id: resolvePlayerId(currentSelection.playerB2Id),
+      };
+    });
+  }, [players]);
+
+  useEffect(() => {
+    if (!isDoublesEnabled) return;
+
+    if (isSinglesOpen && isDoublesOpen) {
+      setDoublesOpen(false);
+      return;
+    }
+
+    if (!isSinglesOpen && !isDoublesOpen) {
+      setSinglesOpen(true);
+    }
+  }, [
+    isDoublesEnabled,
+    isDoublesOpen,
+    isSinglesOpen,
+    setDoublesOpen,
+    setSinglesOpen,
+  ]);
+
+  const activeSelection =
+    isDoublesEnabled && isDoublesOpen ? doublesSelection : singlesSelection;
+
+  const handleSinglesSelectionChange = useCallback(
+    (selection: MatchRecorderSelection) => {
+      setSinglesSelection(selection);
+    },
+    [],
+  );
+
+  const handleDoublesSelectionChange = useCallback(
+    (selection: MatchRecorderSelection) => {
+      setDoublesSelection(selection);
+    },
+    [],
+  );
+
+  const handleSinglesToggle = () => {
+    if (isDoublesEnabled) {
+      if (isSinglesOpen) return;
+      setSinglesOpen(true);
+      setDoublesOpen(false);
+      return;
+    }
+
+    setSinglesOpen(!isSinglesOpen);
+  };
+
+  const handleDoublesToggle = () => {
+    if (isDoublesOpen) return;
+    setDoublesOpen(true);
+    setSinglesOpen(false);
+  };
 
   useEffect(() => {
     if (shouldRedirectToStart) {
@@ -52,12 +177,15 @@ const MatchPage = () => {
           storageKey="section-match-record-match"
           title={t("Record match")}
           defaultOpen={true}
+          isOpen={isDoublesEnabled ? isSinglesOpen : undefined}
+          onToggle={isDoublesEnabled ? handleSinglesToggle : undefined}
         >
           <MatchRecorder
             currentRatings={ratingMap}
             players={players}
             matches={matches.map((m) => m.match)}
             mode="singles"
+            onSelectionChange={handleSinglesSelectionChange}
           />
         </CollapsibleSection>
 
@@ -65,23 +193,26 @@ const MatchPage = () => {
           <CollapsibleSection
             storageKey="section-match-record-doubles-match"
             title={t("Record doubles match")}
-            defaultOpen={true}
+            defaultOpen={false}
+            isOpen={isDoublesOpen}
+            onToggle={handleDoublesToggle}
           >
             <MatchRecorder
               currentRatings={ratingMap}
               players={players}
               matches={matches.map((m) => m.match)}
               mode="doubles"
+              onSelectionChange={handleDoublesSelectionChange}
             />
           </CollapsibleSection>
         )}
 
         <CollapsibleSection
           storageKey="section-match-match-history"
-          title={t("Match history")}
+          title={t("Duels")}
           defaultOpen={false}
         >
-          <MatchHistory matches={matches} />
+          <DuelsHistory matches={matches} activeSelection={activeSelection} />
         </CollapsibleSection>
 
         <CollapsibleSection
