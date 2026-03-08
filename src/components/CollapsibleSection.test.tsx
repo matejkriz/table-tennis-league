@@ -12,13 +12,21 @@ import { useCollapsibleState } from "../hooks/useCollapsibleState";
 
 describe("CollapsibleSection", () => {
   const mockToggle = vi.fn();
+  const mockSetOpen = vi.fn();
+  const createHookState = (isOpen: boolean) =>
+    [isOpen, mockToggle, mockSetOpen] as [
+      boolean,
+      typeof mockToggle,
+      typeof mockSetOpen,
+    ];
 
   beforeEach(() => {
     mockToggle.mockClear();
+    mockSetOpen.mockClear();
   });
 
   it("should render with title", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -34,7 +42,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should show children when open", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -50,7 +58,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should hide children when closed", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([false, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
 
     render(
       <CollapsibleSection
@@ -71,7 +79,7 @@ describe("CollapsibleSection", () => {
 
   it("should call toggle when header is clicked", async () => {
     const user = userEvent.setup();
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -90,7 +98,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should pass storageKey to useCollapsibleState", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -106,7 +114,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should pass defaultOpen to useCollapsibleState", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([false, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
 
     render(
       <CollapsibleSection
@@ -122,7 +130,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should display headerRight content when provided", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -139,7 +147,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should not display headerRight when not provided", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -155,7 +163,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should set aria-expanded based on open state", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     const { rerender } = render(
       <CollapsibleSection
@@ -171,7 +179,7 @@ describe("CollapsibleSection", () => {
     expect(button).toHaveAttribute("aria-expanded", "true");
 
     // Simulate closed state
-    vi.mocked(useCollapsibleState).mockReturnValue([false, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
     rerender(
       <CollapsibleSection
         storageKey="test-section"
@@ -186,7 +194,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should rotate chevron icon when open", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -204,7 +212,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should not rotate chevron icon when closed", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([false, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
 
     render(
       <CollapsibleSection
@@ -222,7 +230,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should render as a section element", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     const { container } = render(
       <CollapsibleSection
@@ -238,7 +246,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should render header as a button for accessibility", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -254,9 +262,60 @@ describe("CollapsibleSection", () => {
     expect(button).toHaveAttribute("type", "button");
   });
 
+  it("should use controlled open state when provided", () => {
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
+
+    render(
+      <CollapsibleSection
+        storageKey="test-section"
+        title="Test Section"
+        defaultOpen={false}
+        isOpen={true}
+        onToggle={mockToggle}
+      >
+        <div>Controlled Content</div>
+      </CollapsibleSection>
+    );
+
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Controlled Content")).toBeInTheDocument();
+  });
+
+  it("should call controlled onToggle instead of hook toggle", async () => {
+    const user = userEvent.setup();
+    const hookToggle = vi.fn();
+    const controlledToggle = vi.fn();
+
+    vi.mocked(useCollapsibleState).mockReturnValue(
+      [true, hookToggle, mockSetOpen] as [
+        boolean,
+        typeof hookToggle,
+        typeof mockSetOpen,
+      ],
+    );
+
+    render(
+      <CollapsibleSection
+        storageKey="test-section"
+        title="Test Section"
+        defaultOpen={true}
+        isOpen={true}
+        onToggle={controlledToggle}
+      >
+        <div>Content</div>
+      </CollapsibleSection>
+    );
+
+    await user.click(screen.getByRole("button"));
+
+    expect(controlledToggle).toHaveBeenCalledTimes(1);
+    expect(hookToggle).not.toHaveBeenCalled();
+  });
+
   it("should support keyboard navigation", async () => {
     const user = userEvent.setup();
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -277,7 +336,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should handle complex children", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     render(
       <CollapsibleSection
@@ -301,7 +360,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should apply correct CSS classes for open state", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     const { container } = render(
       <CollapsibleSection
@@ -318,7 +377,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should apply correct CSS classes for closed state", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([false, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
 
     const { container } = render(
       <CollapsibleSection
@@ -335,7 +394,7 @@ describe("CollapsibleSection", () => {
   });
 
   it("should maintain unique storage keys for different sections", () => {
-    vi.mocked(useCollapsibleState).mockReturnValue([true, mockToggle]);
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(true));
 
     const { rerender } = render(
       <CollapsibleSection
