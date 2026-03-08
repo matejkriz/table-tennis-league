@@ -9,7 +9,7 @@ vi.mock("../evolu/client", () => ({
 }));
 
 import { renderHook } from "@testing-library/react";
-import type { MatchRow, PlayerId } from "../evolu/client";
+import type { PlayerId } from "../evolu/client";
 import { allPlayersQuery, playersQuery, useQuery } from "../evolu/client";
 import { K_FACTOR, useLeagueData } from "./useLeagueData";
 import { createMockMatch, createMockPlayer } from "../test/helpers";
@@ -34,8 +34,8 @@ describe("useLeagueData", () => {
   ];
 
   it("should initialize players with their initial ratings", () => {
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
       return [];
     });
 
@@ -51,7 +51,7 @@ describe("useLeagueData", () => {
   it("should calculate rating changes correctly after a match", () => {
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player1" as PlayerId,
@@ -59,9 +59,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -84,7 +84,7 @@ describe("useLeagueData", () => {
   it("should apply K-factor of 16 for rating changes", () => {
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId, // Alice (1000)
         playerBId: "player2" as PlayerId, // Bob (1000)
         winnerId: "player1" as PlayerId, // Alice wins
@@ -92,9 +92,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -113,7 +113,7 @@ describe("useLeagueData", () => {
   it("should calculate expected scores correctly for different ratings", () => {
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId, // Alice (1000)
         playerBId: "player3" as PlayerId, // Charlie (1200)
         winnerId: "player1" as PlayerId, // Alice wins (upset!)
@@ -121,9 +121,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -163,7 +163,7 @@ describe("useLeagueData", () => {
 
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerA2Id: "player2" as PlayerId,
         playerBId: "player3" as PlayerId,
@@ -174,9 +174,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return doublesPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return doublesPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -207,14 +207,14 @@ describe("useLeagueData", () => {
   it("should process matches in chronological order", () => {
     const matches = [
       createMockMatch({
-        id: "match2" as MatchRow["id"],
+        id: "match2",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player1" as PlayerId,
         playedAt: "2024-01-03T00:00:00.000Z", // Later
       }),
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player2" as PlayerId,
@@ -222,9 +222,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -238,14 +238,14 @@ describe("useLeagueData", () => {
   it("should calculate total delta from initial rating", () => {
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId, // Alice
         playerBId: "player2" as PlayerId, // Bob
         winnerId: "player1" as PlayerId,
         playedAt: "2024-01-02T00:00:00.000Z",
       }),
       createMockMatch({
-        id: "match2" as MatchRow["id"],
+        id: "match2",
         playerAId: "player1" as PlayerId, // Alice
         playerBId: "player2" as PlayerId, // Bob
         winnerId: "player1" as PlayerId,
@@ -253,9 +253,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -282,7 +282,7 @@ describe("useLeagueData", () => {
   it("should sort ranking by rating (highest first)", () => {
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId, // Alice (1000)
         playerBId: "player3" as PlayerId, // Charlie (1200)
         winnerId: "player1" as PlayerId, // Alice wins, should overtake Charlie
@@ -290,9 +290,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -309,14 +309,14 @@ describe("useLeagueData", () => {
   it("should track match count for each player", () => {
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId, // Alice
         playerBId: "player2" as PlayerId, // Bob
         winnerId: "player1" as PlayerId,
         playedAt: "2024-01-02T00:00:00.000Z",
       }),
       createMockMatch({
-        id: "match2" as MatchRow["id"],
+        id: "match2",
         playerAId: "player1" as PlayerId, // Alice
         playerBId: "player3" as PlayerId, // Charlie
         winnerId: "player3" as PlayerId,
@@ -324,9 +324,9 @@ describe("useLeagueData", () => {
       }),
     ];
 
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
-      if (query.toString().includes("match")) return matches;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
       return [];
     });
 
@@ -348,8 +348,8 @@ describe("useLeagueData", () => {
   });
 
   it("should create playersById map for quick lookup", () => {
-    vi.mocked(useQuery).mockImplementation((query: any) => {
-      if (query.toString().includes("player")) return mockPlayers;
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
       return [];
     });
 
@@ -403,14 +403,14 @@ describe("useLeagueData", () => {
 
     const matches = [
       createMockMatch({
-        id: "match1" as MatchRow["id"],
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player2" as PlayerId,
         playedAt: "2024-01-02T00:00:00.000Z",
       }),
       createMockMatch({
-        id: "match2" as MatchRow["id"],
+        id: "match2",
         playerAId: "player2" as PlayerId,
         playerBId: "player3" as PlayerId,
         winnerId: "player2" as PlayerId,
