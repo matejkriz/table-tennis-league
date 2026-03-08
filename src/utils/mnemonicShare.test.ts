@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildShareUrl,
+  extractShareTokenFromShareUrl,
   decodeMnemonicShareToken,
   encodeMnemonicShareToken,
-  normalizeLeagueName,
 } from "./mnemonicShare";
 
 const decodeBase64Url = (value: string): Uint8Array => {
@@ -27,15 +27,10 @@ const encodeBase64Url = (bytes: Uint8Array): string => {
 };
 
 describe("mnemonicShare", () => {
-  it("normalizes league name by trimming and lowercasing", () => {
-    expect(normalizeLeagueName("  My League  ")).toBe("my league");
-  });
-
-  it("encodes and decodes mnemonic with normalized league-name parity", async () => {
+  it("encodes and decodes mnemonic", async () => {
     const encoded = await encodeMnemonicShareToken({
       mnemonic:
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-      leagueName: " My League ",
     });
 
     expect(encoded.ok).toBe(true);
@@ -43,7 +38,6 @@ describe("mnemonicShare", () => {
 
     const decoded = await decodeMnemonicShareToken({
       token: encoded.value,
-      leagueName: "my league",
     });
 
     expect(decoded.ok).toBe(true);
@@ -53,29 +47,38 @@ describe("mnemonicShare", () => {
     );
   });
 
-  it("fails decryption with wrong league name", async () => {
-    const encoded = await encodeMnemonicShareToken({
+  it("returns the same token for the same mnemonic", async () => {
+    const input = {
       mnemonic:
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-      leagueName: "league one",
-    });
-    expect(encoded.ok).toBe(true);
-    if (!encoded.ok) return;
+    };
 
-    const decoded = await decodeMnemonicShareToken({
-      token: encoded.value,
-      leagueName: "league two",
+    const encodedA = await encodeMnemonicShareToken(input);
+    const encodedB = await encodeMnemonicShareToken(input);
+
+    expect(encodedA).toEqual(encodedB);
+  });
+
+  it("returns different tokens for different mnemonics", async () => {
+    const encodedA = await encodeMnemonicShareToken({
+      mnemonic:
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    });
+    const encodedB = await encodeMnemonicShareToken({
+      mnemonic:
+        "legal winner thank year wave sausage worth useful legal winner thank yellow",
     });
 
-    expect(decoded.ok).toBe(false);
-    if (decoded.ok) return;
-    expect(decoded.error.type).toBe("DecryptionFailed");
+    expect(encodedA.ok).toBe(true);
+    expect(encodedB.ok).toBe(true);
+    if (!encodedA.ok || !encodedB.ok) return;
+
+    expect(encodedA.value).not.toBe(encodedB.value);
   });
 
   it("fails for malformed token", async () => {
     const decoded = await decodeMnemonicShareToken({
       token: "not-a-valid-token",
-      leagueName: "league",
     });
 
     expect(decoded.ok).toBe(false);
@@ -87,17 +90,15 @@ describe("mnemonicShare", () => {
     const encoded = await encodeMnemonicShareToken({
       mnemonic:
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-      leagueName: "league",
     });
     expect(encoded.ok).toBe(true);
     if (!encoded.ok) return;
 
     const payload = decodeBase64Url(encoded.value);
-    payload[0] = 0xff;
+    payload[0] = 1;
 
     const decoded = await decodeMnemonicShareToken({
       token: encodeBase64Url(payload),
-      leagueName: "league",
     });
 
     expect(decoded.ok).toBe(false);
@@ -109,7 +110,6 @@ describe("mnemonicShare", () => {
     const encoded = await encodeMnemonicShareToken({
       mnemonic:
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-      leagueName: "league",
     });
     expect(encoded.ok).toBe(true);
     if (!encoded.ok) return;
@@ -121,13 +121,30 @@ describe("mnemonicShare", () => {
   it("does not set compressed flag when compression is not smaller", async () => {
     const encoded = await encodeMnemonicShareToken({
       mnemonic: "abc",
-      leagueName: "league",
     });
     expect(encoded.ok).toBe(true);
     if (!encoded.ok) return;
 
     const payload = decodeBase64Url(encoded.value);
     expect(payload[1] & 1).toBe(0);
+  });
+
+  it("extracts share token from a share URL", () => {
+    const shareTokenResult = extractShareTokenFromShareUrl(
+      "https://example.com/start?share=abc123"
+    );
+
+    expect(shareTokenResult).toEqual({ ok: true, value: "abc123" });
+  });
+
+  it("fails when the scanned URL does not contain a share token", () => {
+    const shareTokenResult = extractShareTokenFromShareUrl(
+      "https://example.com/start"
+    );
+
+    expect(shareTokenResult.ok).toBe(false);
+    if (shareTokenResult.ok) return;
+    expect(shareTokenResult.error.type).toBe("InvalidShareUrl");
   });
 
   it("builds share URLs targeting /start", () => {

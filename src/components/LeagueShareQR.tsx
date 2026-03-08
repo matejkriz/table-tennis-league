@@ -3,13 +3,11 @@ import { useTranslation } from "react-i18next";
 
 interface LeagueShareQRProps {
   shareUrl: string | null;
-  normalizedLeagueName: string;
   onCopyShareLink: () => void;
 }
 
 export const LeagueShareQR = ({
   shareUrl,
-  normalizedLeagueName,
   onCopyShareLink,
 }: LeagueShareQRProps) => {
   const { t } = useTranslation();
@@ -47,23 +45,18 @@ export const LeagueShareQR = ({
     );
   }
 
-  if (normalizedLeagueName.length > 0) {
-    return (
-      <div className="mt-4 rounded border border-black/10 bg-black/5 p-4">
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="animate-pulse rounded bg-black/10"
-            style={{ width: 220, height: 220 }}
-          />
-          <div className="animate-pulse h-8 w-36 rounded-full bg-black/10" />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <p className="mt-4 text-sm text-black/50">
-      {t("Enter a league name to generate a QR share link.")}
-    </p>
+    <div className="mt-4 rounded border border-black/10 bg-black/5 p-4">
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className="animate-pulse rounded bg-black/10"
+          style={{ width: 220, height: 220 }}
+        />
+        <div className="animate-pulse h-8 w-36 rounded-full bg-black/10" />
+      </div>
+      <p className="mt-4 text-center text-sm text-black/50">
+        {t("Preparing share link...")}
+      </p>
+    </div>
   );
 };

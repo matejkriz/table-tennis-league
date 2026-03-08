@@ -49,6 +49,17 @@
 - [x] Move the shared push notifications hook/context contract into a non-component module.
 - [x] Verify with `yarn lint` and `yarn typecheck`.
 
+# TODO - Deterministic QR Share With File/Camera Scan
+
+- [x] Add task documentation and implementation review file.
+- [x] Add `html5-qrcode` dependency and scanner wrapper for camera/file decode.
+- [x] Rewrite `mnemonicShare` for deterministic hardcoded-key encoding and no league-name dependency.
+- [x] Add failing tests for deterministic token behavior, URL auto-import, and scanner restore flows.
+- [x] Remove league-name/password UI from Settings and Start share/import flows.
+- [x] Add desktop file upload/drop-zone QR import and mobile camera scanner panel.
+- [x] Update i18n strings for scan/import/loading/error copy.
+- [x] Verify with `yarn test --run src/utils/mnemonicShare.test.ts src/components/OwnerSection.test.tsx src/routes/start.test.tsx` and `yarn typecheck`.
+
 # TODO - Player Deletion Retention Expiry
 
 - [x] Add a regression test proving recently deleted players disappear when the 30-day window elapses while the page stays open.
