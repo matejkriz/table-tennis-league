@@ -6,7 +6,7 @@ vi.mock("../evolu/client", () => ({
   formatTypeError: vi.fn((error) => `Error: ${error.type}`),
 }));
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEvolu } from "../evolu/client";
 import { AddPlayerForm } from "./AddPlayerForm";
@@ -115,12 +115,41 @@ describe("AddPlayerForm", () => {
 
     // Simulate onComplete callback
     if (onCompleteCallback) {
-      onCompleteCallback();
+      act(() => {
+        onCompleteCallback?.();
+      });
     }
 
     await waitFor(() => {
       expect(nameInput).toHaveValue("");
       expect(ratingInput).toHaveValue(1000); // Reset to default
+    });
+  });
+
+  it("shows a success toast after a player is added", async () => {
+    const user = userEvent.setup();
+    let onCompleteCallback: (() => void) | undefined;
+
+    mockInsert.mockImplementation(
+      (_table: string, _data: unknown, options?: { onComplete?: () => void }) => {
+        onCompleteCallback = options?.onComplete;
+        return { ok: true };
+      }
+    );
+
+    render(<AddPlayerForm />);
+
+    await user.type(screen.getByLabelText(/player name/i), "Helen");
+    await user.click(screen.getByRole("button", { name: /add player/i }));
+
+    if (onCompleteCallback) {
+      act(() => {
+        onCompleteCallback?.();
+      });
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText("Player added.")).toBeInTheDocument();
     });
   });
 

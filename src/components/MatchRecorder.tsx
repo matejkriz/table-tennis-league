@@ -17,6 +17,7 @@ import {
 } from "../utils/reconcileSelection";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { RatingChart } from "./RatingChart";
+import { SuccessToast } from "./SuccessToast";
 
 const PLAYER_A_COLOR = "#F7931A";
 const PLAYER_B_COLOR = "#3B82F6";
@@ -651,13 +652,7 @@ export const MatchRecorder = ({
         </div>
       )}
 
-      {successToast && (
-        <div aria-live="polite" className="pointer-events-none fixed left-4 top-4 z-50">
-          <div className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black shadow-lg">
-            {successToast}
-          </div>
-        </div>
-      )}
+      {successToast ? <SuccessToast message={successToast} /> : null}
     </form>
   );
 };

@@ -58,4 +58,13 @@ describe("startAccess", () => {
       })
     ).toBe(false);
   });
+
+  it("still treats the app as startup state when all historical players are deleted and no active players remain", () => {
+    expect(
+      shouldRedirectRootToStart({
+        matchCount: 0,
+        playerCount: 0,
+      })
+    ).toBe(true);
+  });
 });

@@ -26,6 +26,7 @@ const Schema = {
     id: PlayerId,
     name: Evolu.NonEmptyTrimmedString100,
     initialRating: Evolu.NonNegativeNumber,
+    deletedAt: Evolu.nullOr(Evolu.DateIso),
   },
   match: {
     id: MatchId,
@@ -148,7 +149,7 @@ evolu.subscribeError(() => {
 export const playersQuery = evolu.createQuery((db) =>
   db
     .selectFrom("player")
-    .select(["id", "name", "initialRating", "createdAt"])
+    .select(["id", "name", "initialRating", "createdAt", "deletedAt"])
     .where("isDeleted", "is not", Evolu.sqliteTrue)
     .where("name", "is not", null)
     .$narrowType<{ name: Evolu.kysely.NotNull }>()
@@ -158,6 +159,19 @@ export const playersQuery = evolu.createQuery((db) =>
 );
 
 export type PlayerRow = typeof playersQuery.Row;
+
+export const allPlayersQuery = evolu.createQuery((db) =>
+  db
+    .selectFrom("player")
+    .select(["id", "name", "initialRating", "createdAt", "deletedAt"])
+    .where("name", "is not", null)
+    .$narrowType<{ name: Evolu.kysely.NotNull }>()
+    .where("initialRating", "is not", null)
+    .$narrowType<{ initialRating: Evolu.kysely.NotNull }>()
+    .orderBy("createdAt")
+);
+
+export type AllPlayerRow = typeof allPlayersQuery.Row;
 
 export const matchesQuery = evolu.createQuery((db) =>
   db

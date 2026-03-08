@@ -16,12 +16,14 @@ export function createMockPlayer(data: {
   name?: string;
   initialRating?: number;
   createdAt?: string;
+  deletedAt?: string | null;
 }): PlayerRow {
   return {
     id: data.id,
     name: data.name ?? "Test Player",
     initialRating: data.initialRating ?? 1000,
     createdAt: data.createdAt ?? "2024-01-01T00:00:00.000Z",
+    deletedAt: data.deletedAt ?? null,
   } as PlayerRow;
 }
 

@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../evolu/client", () => ({
   useQuery: vi.fn(),
   playersQuery: { toString: () => "player" },
+  allPlayersQuery: { toString: () => "all-player" },
   matchesQuery: { toString: () => "match" },
 }));
 
 import { renderHook } from "@testing-library/react";
 import type { MatchRow, PlayerId } from "../evolu/client";
-import { useQuery } from "../evolu/client";
+import { allPlayersQuery, playersQuery, useQuery } from "../evolu/client";
 import { K_FACTOR, useLeagueData } from "./useLeagueData";
 import { createMockMatch, createMockPlayer } from "../test/helpers";
 
@@ -376,5 +377,83 @@ describe("useLeagueData", () => {
 
   it("should verify K-factor constant is 16", () => {
     expect(K_FACTOR).toBe(16);
+  });
+
+  it("keeps deleted players in historical matches and rating progression but hides them from active players and ranking", () => {
+    const allPlayers = [
+      createMockPlayer({
+        id: "player1" as PlayerId,
+        name: "Alice",
+        initialRating: 1000,
+      }),
+      createMockPlayer({
+        id: "player2" as PlayerId,
+        name: "Bob",
+        initialRating: 1000,
+        deletedAt: "2024-01-04T10:00:00.000Z",
+      }),
+      createMockPlayer({
+        id: "player3" as PlayerId,
+        name: "Charlie",
+        initialRating: 1000,
+      }),
+    ];
+
+    const activePlayers = [allPlayers[0], allPlayers[2]];
+
+    const matches = [
+      createMockMatch({
+        id: "match1" as MatchRow["id"],
+        playerAId: "player1" as PlayerId,
+        playerBId: "player2" as PlayerId,
+        winnerId: "player2" as PlayerId,
+        playedAt: "2024-01-02T00:00:00.000Z",
+      }),
+      createMockMatch({
+        id: "match2" as MatchRow["id"],
+        playerAId: "player2" as PlayerId,
+        playerBId: "player3" as PlayerId,
+        winnerId: "player2" as PlayerId,
+        playedAt: "2024-01-03T00:00:00.000Z",
+      }),
+    ];
+
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (query === allPlayersQuery) return allPlayers;
+      if (query === playersQuery) return activePlayers;
+      if (String(query).includes("match")) return matches;
+      return [];
+    });
+
+    const { result } = renderHook(() => useLeagueData());
+
+    expect(result.current.players.map((player) => player.name)).toEqual([
+      "Alice",
+      "Charlie",
+    ]);
+    expect(result.current.ranking.map((entry) => entry.player.name).sort()).toEqual([
+      "Alice",
+      "Charlie",
+    ]);
+    expect(result.current.matches).toHaveLength(2);
+    expect(result.current.matches[0].participants.map((participant) => participant.player.name)).toEqual([
+      "Alice",
+      "Bob",
+    ]);
+    expect(result.current.matches[1].participants.map((participant) => participant.player.name)).toEqual([
+      "Bob",
+      "Charlie",
+    ]);
+    expect(result.current.playersById.get("player2" as PlayerId)?.name).toBe("Bob");
+
+    const aliceRanking = result.current.ranking.find(
+      (entry) => entry.player.name === "Alice",
+    );
+    const charlieRanking = result.current.ranking.find(
+      (entry) => entry.player.name === "Charlie",
+    );
+
+    expect(aliceRanking?.rating).toBeLessThan(1000);
+    expect(charlieRanking?.rating).toBeLessThan(1000);
   });
 });
