@@ -142,7 +142,7 @@ evolu.subscribeError(() => {
   const error = evolu.getError();
   if (!error) return;
   alert(`Evolu error occurred. ${error}`);
-   
+
   console.error(error);
 });
 

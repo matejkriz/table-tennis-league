@@ -48,3 +48,9 @@
 
 - [x] Move the shared push notifications hook/context contract into a non-component module.
 - [x] Verify with `yarn lint` and `yarn typecheck`.
+
+# TODO - Player Deletion Retention Expiry
+
+- [x] Add a regression test proving recently deleted players disappear when the 30-day window elapses while the page stays open.
+- [x] Replace the stale `useMemo([players])` time dependency in `settings.players.tsx` with deterministic expiry-driven state.
+- [x] Verify with targeted tests, `npm run typecheck`, and lints for touched files.
