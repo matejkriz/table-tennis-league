@@ -12,3 +12,6 @@
 - When adding new surfaces to an existing page family, reuse the app’s established card treatment for radius, border, and shadow instead of introducing a new card variant for a one-off screen.
 - In this i18n setup (no explicit `en` resource), pluralized `t(key, { count })` calls must include an English fallback path in UI code or matching keys in an English resource; otherwise users can see raw keys like `players_count`.
 - When adding UI filters or preferences, treat the default selection and persistence behavior as part of the feature contract; if it must survive reloads on one device, store it in local-only `_uiPreference` rather than route-local state.
+- When a user corrects UI control copy or control style, treat the requested wording and control type as exact product requirements; update the rendered labels, tests, and locale entries together.
+- When a user asks for a spacing or placement tweak in UI, treat it as a layout requirement and adjust the actual container structure, not just typography or color.
+- When a user specifies alignment for a UI group, apply it to the container layout so the whole group moves together rather than shifting only one child.

@@ -104,25 +104,26 @@ describe("StatsPage", () => {
   it("defaults to the last 30 days filter and updates the visible ranking entries", async () => {
     const { rerender } = render(<StatsPage />);
 
-    expect(screen.getByRole("radio", { name: "Last 30 days" })).toBeChecked();
+    expect(screen.getAllByText("Last match in:").length).toBeGreaterThan(0);
+    expect(screen.getByRole("radio", { name: "30 days" })).toBeChecked();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
     expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
     expect(screen.queryByText("Dana")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: "Last 7 days" }));
+    fireEvent.click(screen.getByRole("radio", { name: "7 days" }));
     rerender(<StatsPage />);
 
-    expect(screen.getByRole("radio", { name: "Last 7 days" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "7 days" })).toBeChecked();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
     expect(screen.queryByText("Charlie")).not.toBeInTheDocument();
     expect(screen.queryByText("Dana")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: "All" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Anytime" }));
     rerender(<StatsPage />);
 
-    expect(screen.getByRole("radio", { name: "All" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Anytime" })).toBeChecked();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
     expect(screen.getByText("Charlie")).toBeInTheDocument();

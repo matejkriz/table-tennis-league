@@ -65,27 +65,32 @@ export const StatsPage = () => {
           defaultOpen={true}
           headerRight={t("STR")}
         >
-          <fieldset
-            aria-label={t("Last played match")}
-            className="mb-5 flex flex-wrap gap-2"
-          >
-            <legend className="sr-only">{t("Last played match")}</legend>
-            {rankingFilterOptions.map((option) => (
-              <label key={option.value} className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="stats-ranking-filter"
-                  value={option.value}
-                  checked={rankingFilter === option.value}
-                  onChange={() => setRankingFilter(option.value)}
-                  className="peer sr-only"
-                />
-                <span className="inline-flex rounded-full border border-black/10 px-3 py-1.5 text-sm text-black/60 transition peer-checked:border-[#F7931A] peer-checked:bg-[#F7931A] peer-checked:text-white">
-                  {t(option.label)}
-                </span>
-              </label>
-            ))}
-          </fieldset>
+          <div className="mb-5 flex flex-wrap items-center justify-end gap-2">
+            <p className="text-sm font-medium text-black/60">
+              {t("Last match in:")}
+            </p>
+            <fieldset
+              aria-label={t("Last match in:")}
+              className="inline-flex rounded-full bg-black/5 p-1"
+            >
+              <legend className="sr-only">{t("Last match in:")}</legend>
+              {rankingFilterOptions.map((option) => (
+                <label key={option.value} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="stats-ranking-filter"
+                    value={option.value}
+                    checked={rankingFilter === option.value}
+                    onChange={() => setRankingFilter(option.value)}
+                    className="peer sr-only"
+                  />
+                  <span className="inline-flex min-w-[5.5rem] items-center justify-center rounded-full px-4 py-2 text-sm font-medium text-black/60 transition peer-checked:bg-[#F7931A] peer-checked:text-white">
+                    {t(option.label)}
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
           <RankingList
             ranking={filteredRanking}
             emptyStateMessage={rankingEmptyStateMessage}
@@ -106,11 +111,11 @@ export const StatsPage = () => {
 
 const rankingFilterOptions: ReadonlyArray<{
   readonly value: StatsRankingFilter;
-  readonly label: "Last 7 days" | "Last 30 days" | "All";
+  readonly label: "7 days" | "30 days" | "Anytime";
 }> = [
-  { value: "7d", label: "Last 7 days" },
-  { value: "30d", label: "Last 30 days" },
-  { value: "all", label: "All" },
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "all", label: "Anytime" },
 ];
 
 export const Route = createFileRoute("/stats")({
