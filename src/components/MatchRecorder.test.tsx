@@ -150,6 +150,38 @@ describe("MatchRecorder", () => {
     });
   });
 
+  it("reconciles singles selection when the player roster changes", () => {
+    const onSelectionChange = vi.fn();
+    const { rerender } = render(
+      <MatchRecorder
+        players={mockPlayers.slice(0, 3)}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    expect(screen.getByLabelText(/player a/i)).toHaveValue("player1");
+    expect(screen.getByLabelText(/player b/i)).toHaveValue("player2");
+
+    rerender(
+      <MatchRecorder
+        players={mockPlayers.slice(1, 4)}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    expect(screen.getByLabelText(/player a/i)).toHaveValue("player2");
+    expect(screen.getByLabelText(/player b/i)).toHaveValue("player3");
+    expect(onSelectionChange).toHaveBeenLastCalledWith({
+      mode: "singles",
+      playerAId: "player2",
+      playerBId: "player3",
+    });
+  });
+
   it("should display winner selection buttons for selected players", () => {
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
@@ -187,13 +219,12 @@ describe("MatchRecorder", () => {
     });
   });
 
-  it("should show upset replay when lower-rated side is selected as winner", () => {
+  it("should show projected change when the default winner is selected", () => {
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
-    expect(screen.queryByText("Projected change")).not.toBeInTheDocument();
-    expect(screen.getByText("Upset replay")).toBeInTheDocument();
+    expect(screen.getByText("Projected change")).toBeInTheDocument();
   });
 
   it("should hide upset replay when stronger side is selected as winner", async () => {

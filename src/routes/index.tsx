@@ -11,6 +11,10 @@ import type { PlayerId } from "../evolu/client";
 import { useCollapsibleState } from "../hooks/useCollapsibleState";
 import { useDoublesPreference } from "../hooks/useDoublesPreference";
 import { useLeagueData } from "../hooks/useLeagueData";
+import {
+  reconcileSelectionIds,
+  selectionIdsMatch,
+} from "../utils/reconcileSelection";
 import { shouldRedirectRootToStart } from "../utils/startAccess";
 
 const createInitialSinglesSelection = (
@@ -70,16 +74,23 @@ export const MatchPage = () => {
         return createInitialSinglesSelection(players);
       }
 
+      const nextSelectionIds = reconcileSelectionIds(players, [
+        currentSelection.playerAId,
+        currentSelection.playerBId,
+      ]);
+      if (
+        selectionIdsMatch(nextSelectionIds, [
+          currentSelection.playerAId,
+          currentSelection.playerBId,
+        ])
+      ) {
+        return currentSelection;
+      }
+
       return {
         mode: "singles",
-        playerAId:
-          currentSelection.playerAId && players.some((player) => player.id === currentSelection.playerAId)
-            ? currentSelection.playerAId
-            : players[0]?.id ?? "",
-        playerBId:
-          currentSelection.playerBId && players.some((player) => player.id === currentSelection.playerBId)
-            ? currentSelection.playerBId
-            : players[1]?.id ?? "",
+        playerAId: nextSelectionIds[0],
+        playerBId: nextSelectionIds[1],
       };
     });
 
@@ -87,16 +98,29 @@ export const MatchPage = () => {
       if (currentSelection.mode !== "doubles") {
         return createInitialDoublesSelection(players);
       }
-
-      const resolvePlayerId = (playerId: PlayerId | "") =>
-        playerId && players.some((player) => player.id === playerId) ? playerId : "";
+      const nextSelectionIds = reconcileSelectionIds(players, [
+        currentSelection.playerAId,
+        currentSelection.playerA2Id,
+        currentSelection.playerBId,
+        currentSelection.playerB2Id,
+      ]);
+      if (
+        selectionIdsMatch(nextSelectionIds, [
+          currentSelection.playerAId,
+          currentSelection.playerA2Id,
+          currentSelection.playerBId,
+          currentSelection.playerB2Id,
+        ])
+      ) {
+        return currentSelection;
+      }
 
       return {
         mode: "doubles",
-        playerAId: resolvePlayerId(currentSelection.playerAId) || players[0]?.id || "",
-        playerA2Id: resolvePlayerId(currentSelection.playerA2Id),
-        playerBId: resolvePlayerId(currentSelection.playerBId) || players[1]?.id || "",
-        playerB2Id: resolvePlayerId(currentSelection.playerB2Id),
+        playerAId: nextSelectionIds[0],
+        playerA2Id: nextSelectionIds[1],
+        playerBId: nextSelectionIds[2],
+        playerB2Id: nextSelectionIds[3],
       };
     });
   }, [players]);
@@ -173,21 +197,37 @@ export const MatchPage = () => {
       </header>
 
       <div className="space-y-6">
-        <CollapsibleSection
-          storageKey="section-match-record-match"
-          title={t("Record match")}
-          defaultOpen={true}
-          isOpen={isDoublesEnabled ? isSinglesOpen : undefined}
-          onToggle={isDoublesEnabled ? handleSinglesToggle : undefined}
-        >
-          <MatchRecorder
-            currentRatings={ratingMap}
-            players={players}
-            matches={matches.map((m) => m.match)}
-            mode="singles"
-            onSelectionChange={handleSinglesSelectionChange}
-          />
-        </CollapsibleSection>
+        {isDoublesEnabled ? (
+          <CollapsibleSection
+            storageKey="section-match-record-match"
+            title={t("Record match")}
+            defaultOpen={true}
+            isOpen={isSinglesOpen}
+            onToggle={handleSinglesToggle}
+          >
+            <MatchRecorder
+              currentRatings={ratingMap}
+              players={players}
+              matches={matches.map((m) => m.match)}
+              mode="singles"
+              onSelectionChange={handleSinglesSelectionChange}
+            />
+          </CollapsibleSection>
+        ) : (
+          <CollapsibleSection
+            storageKey="section-match-record-match"
+            title={t("Record match")}
+            defaultOpen={true}
+          >
+            <MatchRecorder
+              currentRatings={ratingMap}
+              players={players}
+              matches={matches.map((m) => m.match)}
+              mode="singles"
+              onSelectionChange={handleSinglesSelectionChange}
+            />
+          </CollapsibleSection>
+        )}
 
         {isDoublesEnabled && (
           <CollapsibleSection

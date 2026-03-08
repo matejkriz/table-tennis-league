@@ -1,6 +1,6 @@
 import * as Evolu from "@evolu/common";
 import { IconMoodSad, IconTrophy } from "@tabler/icons-react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
@@ -11,6 +11,10 @@ import {
   calculateTeamMatchRatingDeltas,
   type WinnerTeam,
 } from "../utils/matchRating";
+import {
+  reconcileSelectionIds,
+  selectionIdsMatch,
+} from "../utils/reconcileSelection";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { RatingChart } from "./RatingChart";
 
@@ -109,6 +113,37 @@ export const MatchRecorder = ({
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const hasMountedRef = useRef(false);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (isDoublesMode) {
+      const currentSelectionIds = [playerAId, playerA2Id, playerBId, playerB2Id];
+      const nextSelectionIds = reconcileSelectionIds(players, currentSelectionIds);
+      if (selectionIdsMatch(currentSelectionIds, nextSelectionIds)) {
+        return;
+      }
+
+      setPlayerAId(nextSelectionIds[0]);
+      setPlayerA2Id(nextSelectionIds[1]);
+      setPlayerBId(nextSelectionIds[2]);
+      setPlayerB2Id(nextSelectionIds[3]);
+      return;
+    }
+
+    const currentSelectionIds = [playerAId, playerBId];
+    const nextSelectionIds = reconcileSelectionIds(players, currentSelectionIds);
+    if (selectionIdsMatch(currentSelectionIds, nextSelectionIds)) {
+      return;
+    }
+
+    setPlayerAId(nextSelectionIds[0]);
+    setPlayerBId(nextSelectionIds[1]);
+  }, [players]);
 
   useEffect(() => {
     if (!successToast) return;

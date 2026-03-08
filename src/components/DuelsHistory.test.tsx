@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { MatchRecorderSelection } from "./MatchRecorder";
 import type { MatchSummary } from "../hooks/useLeagueData";
-import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
+import type { MatchRow, PlayerRow } from "../evolu/client";
 import { createMockMatch, createMockPlayer } from "../test/helpers";
 import { DuelsHistory } from "./DuelsHistory";
 
@@ -21,22 +22,22 @@ vi.mock("./MatchHistory", () => ({
 }));
 
 const alice = createMockPlayer({
-  id: "player1" as PlayerId,
+  id: "player1",
   name: "Alice",
   initialRating: 1000,
 });
 const bob = createMockPlayer({
-  id: "player2" as PlayerId,
+  id: "player2",
   name: "Bob",
   initialRating: 1000,
 });
 const charlie = createMockPlayer({
-  id: "player3" as PlayerId,
+  id: "player3",
   name: "Charlie",
   initialRating: 1000,
 });
 const dana = createMockPlayer({
-  id: "player4" as PlayerId,
+  id: "player4",
   name: "Dana",
   initialRating: 1000,
 });
@@ -237,13 +238,15 @@ describe("DuelsHistory", () => {
     render(
       <DuelsHistory
         matches={matches}
-        activeSelection={{
-          mode: "doubles",
-          playerAId: alice.id,
-          playerA2Id: "player5" as PlayerId,
-          playerBId: "",
-          playerB2Id: "",
-        }}
+        activeSelection={
+          {
+            mode: "doubles",
+            playerAId: alice.id,
+            playerA2Id: "player5",
+            playerBId: "",
+            playerB2Id: "",
+          } as MatchRecorderSelection
+        }
       />,
     );
 

@@ -1,3 +1,5 @@
+vi.mock("../evolu/client");
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect, useState, type ReactNode } from "react";
@@ -148,5 +150,42 @@ describe("MatchPage", () => {
     expect(screen.getByText("Singles recorder")).toBeInTheDocument();
     expect(screen.queryByText("Doubles recorder")).not.toBeInTheDocument();
     expect(screen.getByTestId("duels-selection")).toHaveTextContent('"mode":"singles"');
+  });
+
+  it("reconciles singles duel selection when a selected player disappears", async () => {
+    const user = userEvent.setup();
+    const players = [
+      { id: "player1", name: "Alice", initialRating: 1000 },
+      { id: "player2", name: "Bob", initialRating: 1000 },
+      { id: "player3", name: "Charlie", initialRating: 1000 },
+    ];
+
+    vi.mocked(useLeagueData).mockReturnValue({
+      players,
+      playersById: new Map(),
+      matches: [],
+      ranking: [],
+    } as unknown as ReturnType<typeof useLeagueData>);
+
+    const { rerender } = render(<MatchPage />);
+    await user.click(screen.getByRole("button", { name: "Duels" }));
+
+    expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerAId":"player1"');
+    expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerBId":"player2"');
+    expect(screen.getByText("Singles recorder")).toBeInTheDocument();
+
+    vi.mocked(useLeagueData).mockReturnValue({
+      players: players.slice(1),
+      playersById: new Map(),
+      matches: [],
+      ranking: [],
+    } as unknown as ReturnType<typeof useLeagueData>);
+
+    rerender(<MatchPage />);
+
+    expect(screen.getByText("Singles recorder")).toBeInTheDocument();
+    expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerAId":"player2"');
+    expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerBId":"player3"');
+    expect(screen.getByTestId("duels-selection")).not.toHaveTextContent('"playerBId":"player2"');
   });
 });

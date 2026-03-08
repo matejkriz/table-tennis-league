@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CollapsibleSection } from "./CollapsibleSection";
 
@@ -311,6 +312,31 @@ describe("CollapsibleSection", () => {
 
     expect(controlledToggle).toHaveBeenCalledTimes(1);
     expect(hookToggle).not.toHaveBeenCalled();
+  });
+
+  it("treats partial controlled props as uncontrolled", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCollapsibleState).mockReturnValue(createHookState(false));
+
+    render(
+      <CollapsibleSection
+        {...({
+          storageKey: "test-section",
+          title: "Test Section",
+          defaultOpen: false,
+          isOpen: true,
+        } as unknown as ComponentProps<typeof CollapsibleSection>)}
+      >
+        <div>Content</div>
+      </CollapsibleSection>,
+    );
+
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(button);
+
+    expect(mockToggle).toHaveBeenCalledTimes(1);
   });
 
   it("should support keyboard navigation", async () => {

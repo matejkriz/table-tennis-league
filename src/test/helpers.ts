@@ -5,14 +5,14 @@
  * accepting plain JavaScript types and returning properly typed Evolu rows.
  */
 
-import type { MatchRow, PlayerId, PlayerRow } from "../evolu/client";
+import type { MatchRow, PlayerRow } from "../evolu/client";
 
 /**
  * Creates a mock PlayerRow for testing.
  * Accepts plain JavaScript types and handles branded type assertions internally.
  */
 export function createMockPlayer(data: {
-  id: PlayerId;
+  id: string;
   name?: string;
   initialRating?: number;
   createdAt?: string;
@@ -30,12 +30,12 @@ export function createMockPlayer(data: {
  * Accepts plain JavaScript types and handles branded type assertions internally.
  */
 export function createMockMatch(data: {
-  id: MatchRow["id"];
-  playerAId: PlayerId;
-  playerBId: PlayerId;
-  playerA2Id?: PlayerId | null;
-  playerB2Id?: PlayerId | null;
-  winnerId: PlayerId;
+  id: string;
+  playerAId: string;
+  playerBId: string;
+  playerA2Id?: string | null;
+  playerB2Id?: string | null;
+  winnerId: string;
   winnerTeam?: "A" | "B" | null;
   playedAt?: string;
   note?: string | null;

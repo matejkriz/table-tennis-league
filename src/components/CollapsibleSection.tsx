@@ -3,38 +3,44 @@ import type { ReactNode } from "react";
 
 import { useCollapsibleState } from "../hooks/useCollapsibleState";
 
-interface CollapsibleSectionProps {
+interface CollapsibleSectionBaseProps {
   /** Unique storage key for persisting state (e.g., "section-home-ranking") */
-  storageKey: string;
+  readonly storageKey: string;
   /** Section title displayed in the header */
-  title: string;
+  readonly title: string;
   /** Whether the section should be open by default (when no stored preference exists) */
-  defaultOpen: boolean;
+  readonly defaultOpen: boolean;
   /** Content to display when expanded */
-  children: ReactNode;
+  readonly children: ReactNode;
   /** Optional element to display on the right side of the header (e.g., "STR" label) */
-  headerRight?: ReactNode;
-  /** Optional controlled open state */
-  isOpen?: boolean;
-  /** Optional controlled toggle handler */
-  onToggle?: () => void;
+  readonly headerRight?: ReactNode;
 }
 
-export function CollapsibleSection({
-  storageKey,
-  title,
-  defaultOpen,
-  children,
-  headerRight,
-  isOpen: controlledIsOpen,
-  onToggle: controlledOnToggle,
-}: CollapsibleSectionProps) {
+type ControlledCollapsibleSectionProps = CollapsibleSectionBaseProps & {
+  /** Controlled open state */
+  readonly isOpen: boolean;
+  /** Controlled toggle handler */
+  readonly onToggle: () => void;
+};
+
+type UncontrolledCollapsibleSectionProps = CollapsibleSectionBaseProps & {
+  readonly isOpen?: never;
+  readonly onToggle?: never;
+};
+
+type CollapsibleSectionProps =
+  | ControlledCollapsibleSectionProps
+  | UncontrolledCollapsibleSectionProps;
+
+export function CollapsibleSection(props: CollapsibleSectionProps) {
+  const { storageKey, title, defaultOpen, children, headerRight } = props;
   const [uncontrolledIsOpen, uncontrolledToggle] = useCollapsibleState(
     storageKey,
     defaultOpen,
   );
-  const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
-  const toggle = controlledOnToggle ?? uncontrolledToggle;
+  const isControlled = "isOpen" in props && "onToggle" in props;
+  const isOpen = isControlled ? props.isOpen : uncontrolledIsOpen;
+  const toggle = isControlled ? props.onToggle : uncontrolledToggle;
 
   return (
     <section className="rounded-lg border border-black/10 bg-white">
