@@ -33,7 +33,10 @@ export default [
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       "react-hooks/set-state-in-effect": "off",
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
     },
   },
   {
@@ -50,7 +53,6 @@ export default [
       },
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },

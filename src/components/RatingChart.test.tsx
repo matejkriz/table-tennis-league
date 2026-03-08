@@ -28,6 +28,16 @@ import type { PlayerId, MatchRow, PlayerRow } from "../evolu/client";
 import { createMockPlayer, createMockMatch } from "../test/helpers";
 import { RatingChart } from "./RatingChart";
 
+type CapturedChartDataPoint = {
+  formattedDate: string;
+  [key: string]: number | string | null;
+};
+
+type MockLineChartProps = {
+  children?: React.ReactNode;
+  data?: CapturedChartDataPoint[];
+};
+
 describe("RatingChart", () => {
   const mockPlayers: PlayerRow[] = [
     createMockPlayer({
@@ -111,10 +121,10 @@ describe("RatingChart", () => {
 
   it("should handle matches from today correctly", () => {
     const today = new Date().toISOString().split("T")[0];
-    
+
     const matchesToday: MatchRow[] = [
       createMockMatch({
-        id: "match1" as any,
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player1" as PlayerId,
@@ -143,9 +153,9 @@ describe("RatingChart", () => {
     const today = new Date();
     const day91Ago = new Date(today);
     day91Ago.setDate(day91Ago.getDate() - 91);
-    
+
     const oldMatch: MatchRow = createMockMatch({
-      id: "match1" as any,
+      id: "match1",
       playerAId: "player1" as PlayerId,
       playerBId: "player2" as PlayerId,
       winnerId: "player1" as PlayerId,
@@ -207,17 +217,17 @@ describe("RatingChart", () => {
 
   it("should handle multiple matches on the same day", () => {
     const today = new Date().toISOString().split("T")[0];
-    
+
     const matchesSameDay: MatchRow[] = [
       createMockMatch({
-        id: "match1" as any,
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player1" as PlayerId,
         playedAt: today,
       }),
       createMockMatch({
-        id: "match2" as any,
+        id: "match2",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player2" as PlayerId,
@@ -249,17 +259,17 @@ describe("RatingChart", () => {
     });
 
     const today = new Date().toISOString().split("T")[0];
-    
+
     const mixedMatches: MatchRow[] = [
       createMockMatch({
-        id: "match1" as any,
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player3" as PlayerId,
         winnerId: "player1" as PlayerId,
         playedAt: today,
       }),
       createMockMatch({
-        id: "match2" as any,
+        id: "match2",
         playerAId: "player2" as PlayerId,
         playerBId: "player3" as PlayerId,
         winnerId: "player2" as PlayerId,
@@ -292,9 +302,9 @@ describe("RatingChart", () => {
 
   it("should correctly calculate projection when player A wins", () => {
     // Mock LineChart to capture the data prop
-    let capturedData: any[] = [];
+    let capturedData: CapturedChartDataPoint[] = [];
     mockLineChart.mockImplementation(
-      ({ data, children }: { data: any[]; children: React.ReactNode }) => {
+      ({ data = [], children }: MockLineChartProps) => {
         capturedData = data;
         return <div data-testid="line-chart">{children}</div>;
       }
@@ -317,7 +327,7 @@ describe("RatingChart", () => {
     const projectionPoint = capturedData[capturedData.length - 1];
     expect(projectionPoint).toBeDefined();
     expect(projectionPoint.formattedDate).toBe("Projection");
-    
+
     // Verify projection calculation: currentRating + delta
     // Player A (winner): 1008 + 8 = 1016
     // Player B (loser): 992 + (-8) = 984
@@ -327,9 +337,9 @@ describe("RatingChart", () => {
 
   it("should correctly calculate projection when player B wins", () => {
     // Mock LineChart to capture the data prop
-    let capturedData: any[] = [];
+    let capturedData: CapturedChartDataPoint[] = [];
     mockLineChart.mockImplementation(
-      ({ data, children }: { data: any[]; children: React.ReactNode }) => {
+      ({ data = [], children }: MockLineChartProps) => {
         capturedData = data;
         return <div data-testid="line-chart">{children}</div>;
       }
@@ -352,7 +362,7 @@ describe("RatingChart", () => {
     const projectionPoint = capturedData[capturedData.length - 1];
     expect(projectionPoint).toBeDefined();
     expect(projectionPoint.formattedDate).toBe("Projection");
-    
+
     // Verify projection calculation: currentRating + delta
     // Player A (loser): 1008 + (-8) = 1000
     // Player B (winner): 992 + 8 = 1000
@@ -362,9 +372,9 @@ describe("RatingChart", () => {
 
   it("should handle underdog wins with larger rating deltas correctly", () => {
     // Mock LineChart to capture the data prop
-    let capturedData: any[] = [];
+    let capturedData: CapturedChartDataPoint[] = [];
     mockLineChart.mockImplementation(
-      ({ data, children }: { data: any[]; children: React.ReactNode }) => {
+      ({ data = [], children }: MockLineChartProps) => {
         capturedData = data;
         return <div data-testid="line-chart">{children}</div>;
       }
@@ -387,7 +397,7 @@ describe("RatingChart", () => {
 
     const projectionPoint = capturedData[capturedData.length - 1];
     expect(projectionPoint).toBeDefined();
-    
+
     // Verify the deltas are applied correctly (not using Math.abs which would break this)
     expect(projectionPoint["Alice (proj)"]).toBeCloseTo(1008 - 12.5, 1);
     expect(projectionPoint["Bob (proj)"]).toBeCloseTo(992 + 12.5, 1);
@@ -456,21 +466,21 @@ describe("RatingChart", () => {
   it("should handle chronological ordering of matches", () => {
     const day5Ago = new Date();
     day5Ago.setDate(day5Ago.getDate() - 5);
-    
+
     const day10Ago = new Date();
     day10Ago.setDate(day10Ago.getDate() - 10);
 
     // Add matches in reverse chronological order
     const matches: MatchRow[] = [
       createMockMatch({
-        id: "match2" as any,
+        id: "match2",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player1" as PlayerId,
         playedAt: day5Ago.toISOString().split("T")[0],
       }),
       createMockMatch({
-        id: "match1" as any,
+        id: "match1",
         playerAId: "player1" as PlayerId,
         playerBId: "player2" as PlayerId,
         winnerId: "player2" as PlayerId,

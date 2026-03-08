@@ -144,7 +144,7 @@ export const MatchRecorder = ({
 
     setPlayerAId(nextSelectionIds[0]);
     setPlayerBId(nextSelectionIds[1]);
-  }, [players]);
+  }, [players, isDoublesMode, playerAId, playerBId, playerA2Id, playerB2Id]);
 
   useEffect(() => {
     if (!successToast) return;
