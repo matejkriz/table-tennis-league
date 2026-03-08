@@ -85,10 +85,6 @@ vi.mock("../components/DuelsHistory", () => ({
   ),
 }));
 
-vi.mock("../components/RankingList", () => ({
-  RankingList: () => <div>Ranking list</div>,
-}));
-
 vi.mock("../hooks/useCollapsibleState", () => ({
   useCollapsibleState: (_key: string, defaultOpen: boolean) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -187,5 +183,13 @@ describe("MatchPage", () => {
     expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerAId":"player2"');
     expect(screen.getByTestId("duels-selection")).toHaveTextContent('"playerBId":"player3"');
     expect(screen.getByTestId("duels-selection")).not.toHaveTextContent('"playerBId":"player2"');
+  });
+
+  it("does not render the ranking section on the main record match page", () => {
+    render(<MatchPage />);
+
+    expect(
+      screen.queryByRole("button", { name: "Ranking" }),
+    ).not.toBeInTheDocument();
   });
 });

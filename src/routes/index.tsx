@@ -6,7 +6,6 @@ import { CollapsibleSection } from "../components/CollapsibleSection";
 import { DuelsHistory } from "../components/DuelsHistory";
 import { MatchRecorder } from "../components/MatchRecorder";
 import type { MatchRecorderSelection } from "../components/MatchRecorder";
-import { RankingList } from "../components/RankingList";
 import type { PlayerId } from "../evolu/client";
 import { useCollapsibleState } from "../hooks/useCollapsibleState";
 import { useDoublesPreference } from "../hooks/useDoublesPreference";
@@ -253,15 +252,6 @@ export const MatchPage = () => {
           defaultOpen={false}
         >
           <DuelsHistory matches={matches} activeSelection={activeSelection} />
-        </CollapsibleSection>
-
-        <CollapsibleSection
-          storageKey="section-match-ranking"
-          title={t("Ranking")}
-          defaultOpen={false}
-          headerRight={t("STR")}
-        >
-          <RankingList ranking={ranking} />
         </CollapsibleSection>
       </div>
     </div>
