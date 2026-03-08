@@ -4,15 +4,19 @@ import type { RankingEntry } from "../hooks/useLeagueData";
 
 interface RankingListProps {
   readonly ranking: ReadonlyArray<RankingEntry>;
+  readonly emptyStateMessage?: string;
 }
 
-export const RankingList = ({ ranking }: RankingListProps) => {
+export const RankingList = ({
+  ranking,
+  emptyStateMessage,
+}: RankingListProps) => {
   const { t } = useTranslation();
   
   if (ranking.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-black/50">
-        {t("Add players and record a match to see the live table.")}
+        {emptyStateMessage ?? t("Add players and record a match to see the live table.")}
       </p>
     );
   }

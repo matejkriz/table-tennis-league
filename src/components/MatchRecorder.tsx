@@ -115,6 +115,18 @@ export const MatchRecorder = ({
   const [error, setError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const hasMountedRef = useRef(false);
+  const singlesSelectionRef = useRef<readonly [PlayerId | "", PlayerId | ""]>([
+    playerAId,
+    playerBId,
+  ]);
+  const doublesSelectionRef = useRef<
+    readonly [PlayerId | "", PlayerId | "", PlayerId | "", PlayerId | ""]
+  >([playerAId, playerA2Id, playerBId, playerB2Id]);
+
+  useEffect(() => {
+    singlesSelectionRef.current = [playerAId, playerBId];
+    doublesSelectionRef.current = [playerAId, playerA2Id, playerBId, playerB2Id];
+  }, [playerA2Id, playerAId, playerB2Id, playerBId]);
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -123,7 +135,7 @@ export const MatchRecorder = ({
     }
 
     if (isDoublesMode) {
-      const currentSelectionIds = [playerAId, playerA2Id, playerBId, playerB2Id];
+      const currentSelectionIds = doublesSelectionRef.current;
       const nextSelectionIds = reconcileSelectionIds(players, currentSelectionIds);
       if (selectionIdsMatch(currentSelectionIds, nextSelectionIds)) {
         return;
@@ -136,7 +148,7 @@ export const MatchRecorder = ({
       return;
     }
 
-    const currentSelectionIds = [playerAId, playerBId];
+    const currentSelectionIds = singlesSelectionRef.current;
     const nextSelectionIds = reconcileSelectionIds(players, currentSelectionIds);
     if (selectionIdsMatch(currentSelectionIds, nextSelectionIds)) {
       return;
@@ -144,7 +156,7 @@ export const MatchRecorder = ({
 
     setPlayerAId(nextSelectionIds[0]);
     setPlayerBId(nextSelectionIds[1]);
-  }, [players, isDoublesMode, playerAId, playerBId, playerA2Id, playerB2Id]);
+  }, [players, isDoublesMode]);
 
   useEffect(() => {
     if (!successToast) return;
