@@ -8,7 +8,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AddPlayerForm } from "../components/AddPlayerForm";
@@ -17,6 +17,7 @@ import type { AllPlayerRow } from "../evolu/client";
 
 const RETENTION_WINDOW_DAYS = 30;
 const RETENTION_WINDOW_MS = RETENTION_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 interface PlayerManagementGroups {
   readonly activePlayers: ReadonlyArray<AllPlayerRow>;
@@ -44,16 +45,14 @@ export const PlayerManagementPage = () => {
   const { t } = useTranslation();
   const { update } = useEvolu();
   const players = useQuery(allPlayersQuery);
+  const now = useRetentionWindowNow(players);
   const [editingPlayerId, setEditingPlayerId] = useState<AllPlayerRow["id"] | null>(
     null,
   );
   const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { activePlayers, deletedPlayers } = useMemo(
-    () => splitPlayersByStatus(players, new Date()),
-    [players],
-  );
+  const { activePlayers, deletedPlayers } = splitPlayersByStatus(players, now);
   const activePlayersCountLabel = t("players_count", {
     count: activePlayers.length,
   });
@@ -375,7 +374,7 @@ const splitPlayersByStatus = (
       const deletedAtTimestamp = new Date(player.deletedAt).getTime();
       return (
         Number.isFinite(deletedAtTimestamp) &&
-        nowTimestamp - deletedAtTimestamp <= RETENTION_WINDOW_MS
+        nowTimestamp - deletedAtTimestamp < RETENTION_WINDOW_MS
       );
     })
     .sort((left, right) => right.deletedAt!.localeCompare(left.deletedAt!));
@@ -384,6 +383,48 @@ const splitPlayersByStatus = (
     activePlayers,
     deletedPlayers,
   };
+};
+
+const useRetentionWindowNow = (players: ReadonlyArray<AllPlayerRow>): Date => {
+  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+
+  useEffect(() => {
+    const nextExpirationTimestamp = players.reduce<number | null>((nextExpiration, player) => {
+      if (player.deletedAt == null) {
+        return nextExpiration;
+      }
+
+      const deletedAtTimestamp = new Date(player.deletedAt).getTime();
+      if (!Number.isFinite(deletedAtTimestamp)) {
+        return nextExpiration;
+      }
+
+      const expirationTimestamp = deletedAtTimestamp + RETENTION_WINDOW_MS;
+      if (expirationTimestamp <= nowTimestamp) {
+        return nextExpiration;
+      }
+
+      if (nextExpiration == null || expirationTimestamp < nextExpiration) {
+        return expirationTimestamp;
+      }
+
+      return nextExpiration;
+    }, null);
+
+    if (nextExpirationTimestamp == null) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setNowTimestamp(Date.now());
+    }, Math.min(nextExpirationTimestamp - nowTimestamp, MAX_TIMEOUT_MS));
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [players, nowTimestamp]);
+
+  return new Date(nowTimestamp);
 };
 
 export const Route = createFileRoute("/settings/players")({

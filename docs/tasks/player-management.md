@@ -25,3 +25,10 @@
 - Updated active-player badge rendering to use `t("players_count", { count })` pluralization with an English fallback path (`1 player`, `2 players`) when no `en` locale resource is present.
 - Added a regression test for active-player badge pluralization in `src/routes/settings.players.test.tsx`.
 - Verified with `npm run test -- --run src/routes/settings.players.test.tsx`, `npm run lint` (0 errors), and `npm run typecheck`.
+
+## Retention expiry fix
+
+- Replaced the stale `useMemo(() => splitPlayersByStatus(players, new Date()), [players])` path with `useRetentionWindowNow(players)`, which schedules a re-render at the next deleted-player expiry boundary.
+- Tightened the retention comparison to exclude players once the full 30-day window has elapsed and capped timer scheduling to `2 ** 31 - 1` ms so long-lived sessions do not hit browser timeout overflow behavior.
+- Added a regression test covering a page that stays open across the 30-day expiry boundary in `src/routes/settings.players.test.tsx`.
+- Verified with `npm run test -- --run src/routes/settings.players.test.tsx`, `npm run typecheck`, and `npm run lint -- src/routes/settings.players.tsx src/routes/settings.players.test.tsx`.

@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -33,6 +33,10 @@ import { createMockPlayer } from "../test/helpers";
 import type { PlayerId } from "../evolu/client";
 
 describe("PlayerManagementPage", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     const now = Date.now();
@@ -70,6 +74,37 @@ describe("PlayerManagementPage", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
     expect(screen.queryByText("Carol")).not.toBeInTheDocument();
     expect(screen.getByText("Deleted")).toBeInTheDocument();
+  });
+
+  it("removes recently deleted players when their retention window expires while the page stays open", async () => {
+    vi.useFakeTimers();
+
+    const now = new Date("2026-03-08T12:00:00.000Z");
+    vi.setSystemTime(now);
+
+    mockUseQuery.mockReturnValue([
+      createMockPlayer({
+        id: "player1" as PlayerId,
+        name: "Alice",
+        initialRating: 1000,
+      }),
+      createMockPlayer({
+        id: "player2" as PlayerId,
+        name: "Bob",
+        initialRating: 980,
+        deletedAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000 + 1000).toISOString(),
+      }),
+    ]);
+
+    render(<PlayerManagementPage />);
+
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1001);
+    });
+
+    expect(screen.queryByText("Bob")).not.toBeInTheDocument();
   });
 
   it("pluralizes the active player count badge", () => {
