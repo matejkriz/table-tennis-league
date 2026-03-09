@@ -16,7 +16,11 @@ export const reconcileSelectionIds = (
   ];
   const usedIds = new Set<PlayerId>();
 
-  return selectionIds.map(() => {
+  return selectionIds.map((selectionId) => {
+    if (selectionId === "") {
+      return "";
+    }
+
     const nextId = candidateIds.find((playerId) => !usedIds.has(playerId)) ?? "";
     if (nextId) {
       usedIds.add(nextId);

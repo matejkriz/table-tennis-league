@@ -64,6 +64,38 @@ describe("MatchRecorder", () => {
   >(() => ({ ok: true }));
   const mockEnqueueMatchNotification = vi.fn();
 
+  const selectSinglesPlayers = async (
+    user: ReturnType<typeof userEvent.setup>,
+    playerAId: PlayerId = "player1" as PlayerId,
+    playerBId: PlayerId = "player2" as PlayerId,
+  ) => {
+    await user.selectOptions(screen.getByLabelText(/player a/i), playerAId);
+    await user.selectOptions(screen.getByLabelText(/player b/i), playerBId);
+  };
+
+  const prepareSinglesMatch = async (
+    user: ReturnType<typeof userEvent.setup>,
+    winnerName: "Alice" | "Bob" = "Alice",
+  ) => {
+    await selectSinglesPlayers(user);
+    await user.click(
+      screen.getByRole("button", { name: (name) => name.startsWith(winnerName) }),
+    );
+  };
+
+  const prepareDoublesMatch = async (
+    user: ReturnType<typeof userEvent.setup>,
+    winnerName: "Alice + Charlie" | "Bob + Dana" = "Alice + Charlie",
+  ) => {
+    await user.selectOptions(screen.getByLabelText(/team a - player 1/i), "player1");
+    await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
+    await user.selectOptions(screen.getByLabelText(/team b - player 1/i), "player2");
+    await user.selectOptions(screen.getByLabelText(/team b - player 2/i), "player4");
+    await user.click(
+      screen.getByRole("button", { name: (name) => name.startsWith(winnerName) }),
+    );
+  };
+
   beforeEach(() => {
     vi.mocked(useEvolu).mockReturnValue({
       insert: mockInsert,
@@ -112,14 +144,16 @@ describe("MatchRecorder", () => {
     expect(screen.queryByRole("button", { name: /record match/i })).not.toBeInTheDocument();
   });
 
-  it("should initialize with first two players selected", () => {
+  it("should initialize with no selected players or winner", () => {
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
     const playerSelects = screen.getAllByRole("combobox");
-    expect(playerSelects[0]).toHaveValue("player1");
-    expect(playerSelects[1]).toHaveValue("player2");
+    expect(playerSelects[0]).toHaveValue("");
+    expect(playerSelects[1]).toHaveValue("");
+    expect(screen.queryByText("Projected change")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /record match/i })).not.toBeInTheDocument();
   });
 
   it("should report singles selection changes", async () => {
@@ -137,8 +171,8 @@ describe("MatchRecorder", () => {
 
     expect(onSelectionChange).toHaveBeenCalledWith({
       mode: "singles",
-      playerAId: "player1",
-      playerBId: "player2",
+      playerAId: "",
+      playerBId: "",
     });
 
     await user.selectOptions(screen.getByLabelText(/player a/i), "player2");
@@ -150,7 +184,7 @@ describe("MatchRecorder", () => {
     });
   });
 
-  it("reconciles singles selection when the player roster changes", () => {
+  it("preserves empty singles selection when the player roster changes", () => {
     const onSelectionChange = vi.fn();
     const { rerender } = render(
       <MatchRecorder
@@ -160,6 +194,41 @@ describe("MatchRecorder", () => {
         onSelectionChange={onSelectionChange}
       />,
     );
+
+    expect(screen.getByLabelText(/player a/i)).toHaveValue("");
+    expect(screen.getByLabelText(/player b/i)).toHaveValue("");
+
+    rerender(
+      <MatchRecorder
+        players={mockPlayers.slice(1, 4)}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    expect(screen.getByLabelText(/player a/i)).toHaveValue("");
+    expect(screen.getByLabelText(/player b/i)).toHaveValue("");
+    expect(onSelectionChange).toHaveBeenLastCalledWith({
+      mode: "singles",
+      playerAId: "",
+      playerBId: "",
+    });
+  });
+
+  it("reconciles singles selection when a selected player disappears", async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    const { rerender } = render(
+      <MatchRecorder
+        players={mockPlayers.slice(0, 3)}
+        currentRatings={mockCurrentRatings}
+        matches={mockMatches}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    await selectSinglesPlayers(user);
 
     expect(screen.getByLabelText(/player a/i)).toHaveValue("player1");
     expect(screen.getByLabelText(/player b/i)).toHaveValue("player2");
@@ -182,10 +251,13 @@ describe("MatchRecorder", () => {
     });
   });
 
-  it("should display winner selection buttons for selected players", () => {
+  it("should display winner selection buttons for selected players", async () => {
+    const user = userEvent.setup();
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
+
+    await selectSinglesPlayers(user);
 
     const winnerButtons = screen.getAllByRole("button", { name: /Alice|Bob/i });
     expect(winnerButtons.length).toBeGreaterThanOrEqual(2);
@@ -197,6 +269,8 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await selectSinglesPlayers(user);
+
     const aliceButton = screen.getAllByRole("button").find((button) =>
       button.textContent?.includes("Alice")
     );
@@ -207,22 +281,27 @@ describe("MatchRecorder", () => {
     expect(aliceButton).toBeInTheDocument();
     expect(bobButton).toBeInTheDocument();
 
-    // Alice (Player A) should be selected by default - orange color (inline style)
-    expect(aliceButton).toHaveStyle({ borderColor: "#F7931A" });
+    expect(screen.getAllByText(/^winner$/i)).toHaveLength(1);
 
-    // Click Bob to select as winner
+    if (aliceButton) {
+      await user.click(aliceButton);
+      expect(aliceButton).toHaveStyle({ borderColor: "#F7931A" });
+    }
+
     if (bobButton) await user.click(bobButton);
 
-    // Bob (Player B) should now be highlighted - blue color (inline style)
     await waitFor(() => {
       expect(bobButton).toHaveStyle({ borderColor: "#3B82F6" });
     });
   });
 
-  it("should show projected change when the default winner is selected", () => {
+  it("should show projected change after choosing a winner", async () => {
+    const user = userEvent.setup();
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
+
+    await prepareSinglesMatch(user);
 
     expect(screen.getByText("Projected change")).toBeInTheDocument();
   });
@@ -233,6 +312,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await selectSinglesPlayers(user);
     await user.click(screen.getByRole("button", { name: /bob/i }));
     expect(screen.getByText("Projected change")).toBeInTheDocument();
     expect(screen.queryByText("Upset replay")).not.toBeInTheDocument();
@@ -244,6 +324,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     const submitButton = screen.getByRole("button", { name: /record match/i });
     await user.click(submitButton);
 
@@ -252,7 +333,7 @@ describe("MatchRecorder", () => {
       expect.objectContaining({
         playerAId: "player1",
         playerBId: "player2",
-        winnerId: "player1", // Default winner is first player
+        winnerId: "player1",
         note: null,
       }),
       expect.any(Object)
@@ -267,6 +348,9 @@ describe("MatchRecorder", () => {
 
     const playerASelect = screen.getByLabelText(/player a/i);
     const playerBSelect = screen.getByLabelText(/player b/i);
+
+    await user.selectOptions(playerASelect, "player1");
+    await user.selectOptions(playerBSelect, "player2");
 
     expect(playerASelect).toHaveValue("player1");
     expect(playerBSelect).toHaveValue("player2");
@@ -287,6 +371,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     const noteInput = screen.getByPlaceholderText(/score, highlights/i);
     await user.type(noteInput, "Great game! 21-19");
 
@@ -317,6 +402,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     const noteInput = screen.getByPlaceholderText(/score, highlights/i);
     await user.type(noteInput, "Test note");
 
@@ -348,6 +434,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     const submitButton = screen.getByRole("button", { name: /record match/i });
     await user.click(submitButton);
 
@@ -383,8 +470,7 @@ describe("MatchRecorder", () => {
       />
     );
 
-    await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
-    await user.selectOptions(screen.getByLabelText(/team b - player 2/i), "player4");
+    await prepareDoublesMatch(user);
 
     expect(screen.getByRole("button", { name: /alice \+ charlie/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /bob \+ dana/i })).toBeInTheDocument();
@@ -421,13 +507,15 @@ describe("MatchRecorder", () => {
 
     expect(onSelectionChange).toHaveBeenCalledWith({
       mode: "doubles",
-      playerAId: "player1",
+      playerAId: "",
       playerA2Id: "",
-      playerBId: "player2",
+      playerBId: "",
       playerB2Id: "",
     });
 
+    await user.selectOptions(screen.getByLabelText(/team a - player 1/i), "player1");
     await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
+    await user.selectOptions(screen.getByLabelText(/team b - player 1/i), "player2");
     await user.selectOptions(screen.getByLabelText(/team b - player 2/i), "player4");
 
     expect(onSelectionChange).toHaveBeenLastCalledWith({
@@ -459,9 +547,7 @@ describe("MatchRecorder", () => {
       />
     );
 
-    await user.selectOptions(screen.getByLabelText(/team a - player 2/i), "player3");
-    await user.selectOptions(screen.getByLabelText(/team b - player 2/i), "player4");
-    await user.click(screen.getByRole("button", { name: /bob \+ dana/i }));
+    await prepareDoublesMatch(user, "Bob + Dana");
     await user.click(screen.getByRole("button", { name: /record match/i }));
 
     if (onCompleteCallback) onCompleteCallback();
@@ -506,6 +592,7 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     const submitButton = screen.getByRole("button", { name: /record match/i });
     await user.click(submitButton);
 
@@ -516,7 +603,8 @@ describe("MatchRecorder", () => {
     expect(screen.queryByText("Match recorded.")).not.toBeInTheDocument();
   });
 
-  it("should show projected change and no upset replay for equal ratings", () => {
+  it("should show projected change and no upset replay for equal ratings", async () => {
+    const user = userEvent.setup();
     const equalRatingsMap = new Map<PlayerId, number>([
       ["player1" as PlayerId, 1000],
       ["player2" as PlayerId, 1000],
@@ -526,25 +614,29 @@ describe("MatchRecorder", () => {
       <MatchRecorder players={mockPlayers.slice(0, 2)} currentRatings={equalRatingsMap} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     expect(screen.getByText("Projected change")).toBeInTheDocument();
     expect(screen.queryByText("Upset replay")).not.toBeInTheDocument();
   });
 
-  it("should show winner label on selected winner button", () => {
+  it("should show winner label on selected winner button", async () => {
+    const user = userEvent.setup();
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
-    // First player (Alice) is default winner
+    await prepareSinglesMatch(user);
     const winnerLabels = screen.getAllByText(/winner/i);
     expect(winnerLabels.length).toBeGreaterThan(0);
   });
 
-  it("should allow textarea input up to 1000 characters", () => {
+  it("should allow textarea input up to 1000 characters", async () => {
+    const user = userEvent.setup();
     render(
       <MatchRecorder players={mockPlayers} currentRatings={mockCurrentRatings} matches={mockMatches} />
     );
 
+    await prepareSinglesMatch(user);
     const noteInput = screen.getByPlaceholderText(/score, highlights/i);
     expect(noteInput).toHaveAttribute("maxlength", "1000");
   });

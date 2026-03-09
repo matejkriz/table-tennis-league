@@ -74,3 +74,10 @@
 - [x] Implement the Stats page radio-group UI and ranking filtering by latest played match date.
 - [x] Extend `RankingList` with configurable empty-state copy and add i18n strings.
 - [x] Verify with `yarn vitest run src/routes/stats.test.tsx src/hooks/useStatsRankingFilterPreference.test.ts`, `yarn vitest run src/hooks/useLeagueData.test.ts`, and `yarn typecheck`.
+
+# TODO - Match Recorder Empty Default Selection
+
+- [x] Add task documentation and review notes for the match recorder default-selection fix.
+- [x] Add failing tests proving the recorder starts with no selected players or winner.
+- [x] Preserve empty selection slots during reconciliation while still replacing removed selected players.
+- [x] Verify with targeted tests and `yarn typecheck`.

@@ -17,20 +17,20 @@ import {
 import { shouldRedirectRootToStart } from "../utils/startAccess";
 
 const createInitialSinglesSelection = (
-  players: ReadonlyArray<{ readonly id: PlayerId }>,
+  _players: ReadonlyArray<{ readonly id: PlayerId }>,
 ): MatchRecorderSelection => ({
   mode: "singles",
-  playerAId: players[0]?.id ?? "",
-  playerBId: players[1]?.id ?? "",
+  playerAId: "",
+  playerBId: "",
 });
 
 const createInitialDoublesSelection = (
-  players: ReadonlyArray<{ readonly id: PlayerId }>,
+  _players: ReadonlyArray<{ readonly id: PlayerId }>,
 ): MatchRecorderSelection => ({
   mode: "doubles",
-  playerAId: players[0]?.id ?? "",
+  playerAId: "",
   playerA2Id: "",
-  playerBId: players[1]?.id ?? "",
+  playerBId: "",
   playerB2Id: "",
 });
 
