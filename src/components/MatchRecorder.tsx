@@ -102,19 +102,14 @@ export const MatchRecorder = ({
   const isDoublesMode = mode === "doubles";
   const { enqueueMatchNotification } = usePushNotifications();
   const leagueData = useLeagueData();
-  const [playerAId, setPlayerAId] = useState<PlayerId | "">(
-    players[0]?.id ?? "",
-  );
-  const [playerBId, setPlayerBId] = useState<PlayerId | "">(
-    players[1]?.id ?? "",
-  );
+  const [playerAId, setPlayerAId] = useState<PlayerId | "">("");
+  const [playerBId, setPlayerBId] = useState<PlayerId | "">("");
   const [playerA2Id, setPlayerA2Id] = useState<PlayerId | "">("");
   const [playerB2Id, setPlayerB2Id] = useState<PlayerId | "">("");
-  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam | null>("A");
+  const [winnerTeam, setWinnerTeam] = useState<WinnerTeam | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
-  const hasMountedRef = useRef(false);
   const singlesSelectionRef = useRef<readonly [PlayerId | "", PlayerId | ""]>([
     playerAId,
     playerBId,
@@ -129,11 +124,6 @@ export const MatchRecorder = ({
   }, [playerA2Id, playerAId, playerB2Id, playerBId]);
 
   useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-
     if (isDoublesMode) {
       const currentSelectionIds = doublesSelectionRef.current;
       const nextSelectionIds = reconcileSelectionIds(players, currentSelectionIds);
