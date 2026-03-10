@@ -29,15 +29,8 @@ describe("AddPlayerForm", () => {
     render(<AddPlayerForm />);
 
     expect(screen.getByLabelText(/player name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/initial rating/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/initial rating/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /add player/i })).toBeInTheDocument();
-  });
-
-  it("should have default rating of 1000", () => {
-    render(<AddPlayerForm />);
-
-    const ratingInput = screen.getByLabelText(/initial rating/i);
-    expect(ratingInput).toHaveValue(1000);
   });
 
   it("should require name field", () => {
@@ -52,19 +45,16 @@ describe("AddPlayerForm", () => {
     render(<AddPlayerForm />);
 
     const nameInput = screen.getByLabelText(/player name/i);
-    const ratingInput = screen.getByLabelText(/initial rating/i);
     const submitButton = screen.getByRole("button", { name: /add player/i });
 
     await user.type(nameInput, "Alice");
-    await user.clear(ratingInput);
-    await user.type(ratingInput, "1200");
     await user.click(submitButton);
 
     expect(mockInsert).toHaveBeenCalledWith(
       "player",
       {
         name: "Alice",
-        initialRating: 1200,
+        initialRating: 1000,
       },
       expect.objectContaining({
         onComplete: expect.any(Function),
@@ -105,12 +95,9 @@ describe("AddPlayerForm", () => {
     render(<AddPlayerForm />);
 
     const nameInput = screen.getByLabelText(/player name/i);
-    const ratingInput = screen.getByLabelText(/initial rating/i);
     const submitButton = screen.getByRole("button", { name: /add player/i });
 
     await user.type(nameInput, "Charlie");
-    await user.clear(ratingInput);
-    await user.type(ratingInput, "1500");
     await user.click(submitButton);
 
     // Simulate onComplete callback
@@ -122,7 +109,6 @@ describe("AddPlayerForm", () => {
 
     await waitFor(() => {
       expect(nameInput).toHaveValue("");
-      expect(ratingInput).toHaveValue(1000); // Reset to default
     });
   });
 
@@ -153,27 +139,6 @@ describe("AddPlayerForm", () => {
     });
   });
 
-  it("should validate rating is a number", async () => {
-    const user = userEvent.setup();
-    render(<AddPlayerForm />);
-
-    const nameInput = screen.getByLabelText(/player name/i);
-    const ratingInput = screen.getByLabelText(/initial rating/i);
-    const submitButton = screen.getByRole("button", { name: /add player/i });
-
-    await user.type(nameInput, "Dave");
-    await user.clear(ratingInput);
-    await user.type(ratingInput, "not-a-number");
-    await user.click(submitButton);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/please enter a valid initial rating/i)
-      ).toBeInTheDocument();
-    });
-    expect(mockInsert).not.toHaveBeenCalled();
-  });
-
   it("should display error from Evolu validation", async () => {
     const user = userEvent.setup();
     mockInsert.mockReturnValue({
@@ -192,42 +157,6 @@ describe("AddPlayerForm", () => {
     await waitFor(() => {
       expect(screen.getByText(/Error: MinLength/)).toBeInTheDocument();
     });
-  });
-
-  it("should accept decimal ratings", async () => {
-    const user = userEvent.setup();
-    render(<AddPlayerForm />);
-
-    const nameInput = screen.getByLabelText(/player name/i);
-    const ratingInput = screen.getByLabelText(/initial rating/i);
-    const submitButton = screen.getByRole("button", { name: /add player/i });
-
-    await user.type(nameInput, "Frank");
-    await user.clear(ratingInput);
-    await user.type(ratingInput, "1234.56");
-    await user.click(submitButton);
-
-    expect(mockInsert).toHaveBeenCalledWith(
-      "player",
-      expect.objectContaining({
-        initialRating: 1234.56,
-      }),
-      expect.any(Object)
-    );
-  });
-
-  it("should have min value of 0 for rating input", () => {
-    render(<AddPlayerForm />);
-
-    const ratingInput = screen.getByLabelText(/initial rating/i);
-    expect(ratingInput).toHaveAttribute("min", "0");
-  });
-
-  it("should have step of 0.01 for rating input", () => {
-    render(<AddPlayerForm />);
-
-    const ratingInput = screen.getByLabelText(/initial rating/i);
-    expect(ratingInput).toHaveAttribute("step", "0.01");
   });
 
   it("should limit name to 100 characters", () => {
@@ -271,13 +200,6 @@ describe("AddPlayerForm", () => {
     await waitFor(() => {
       expect(screen.queryByText(/Error: ValidationError/)).not.toBeInTheDocument();
     });
-  });
-
-  it("should use type number for rating input", () => {
-    render(<AddPlayerForm />);
-
-    const ratingInput = screen.getByLabelText(/initial rating/i);
-    expect(ratingInput).toHaveAttribute("type", "number");
   });
 
   it("should handle form submission via Enter key", async () => {

@@ -4,13 +4,12 @@ import { useTranslation } from "react-i18next";
 import { formatTypeError, useEvolu } from "../evolu/client";
 import { SuccessToast } from "./SuccessToast";
 
-const DEFAULT_RATING = "1000";
+const DEFAULT_RATING = 1000;
 
 export const AddPlayerForm = () => {
   const { t } = useTranslation();
   const { insert } = useEvolu();
   const [name, setName] = useState("");
-  const [rating, setRating] = useState(DEFAULT_RATING);
   const [error, setError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
@@ -27,23 +26,16 @@ export const AddPlayerForm = () => {
     setError(null);
 
     const trimmedName = name.trim();
-    const parsedRating = Number.parseFloat(rating);
-
-    if (!Number.isFinite(parsedRating)) {
-      setError(t("Please enter a valid initial rating."));
-      return;
-    }
 
     const insertResult = insert(
       "player",
       {
         name: trimmedName,
-        initialRating: parsedRating,
+        initialRating: DEFAULT_RATING,
       },
       {
         onComplete: () => {
           setName("");
-          setRating(DEFAULT_RATING);
           setSuccessToast(t("Player added."));
         },
       },
@@ -56,7 +48,7 @@ export const AddPlayerForm = () => {
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div>
         <label className="block">
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
             {t("Player name")}
@@ -69,19 +61,6 @@ export const AddPlayerForm = () => {
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-black/60">
-            {t("Initial rating")}
-          </span>
-          <input
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-base text-black shadow-sm placeholder:text-black/40 transition-all focus:border-[#F7931A] focus:outline-none focus:ring-2 focus:ring-[#F7931A]/20"
-            min="0"
-            step="0.01"
-            type="number"
-            value={rating}
-            onChange={(event) => setRating(event.target.value)}
           />
         </label>
       </div>
