@@ -157,6 +157,8 @@ describe("StatsPage", () => {
     const aliceRow = screen.getByText("Alice").closest("li");
     expect(aliceRow).not.toBeNull();
 
+    expect(aliceRow).toHaveTextContent("4 matches");
+    expect(aliceRow).not.toHaveTextContent("Start 1200.0");
     expect(within(aliceRow!).getByText("3")).toHaveClass("text-emerald-600");
     expect(within(aliceRow!).getByText(":")).toHaveClass("text-black/30");
 
