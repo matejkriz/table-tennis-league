@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -52,11 +52,11 @@ describe("StatsPage", () => {
     dana: createMockPlayer({ id: "player4", name: "Dana", initialRating: 900 }),
   };
 
-  const ranking: ReadonlyArray<RankingEntry> = [
-    { player: players.alice, rating: 1230, delta: 30, matchCount: 4 },
-    { player: players.bob, rating: 1115, delta: 15, matchCount: 3 },
-    { player: players.charlie, rating: 980, delta: -20, matchCount: 2 },
-    { player: players.dana, rating: 900, delta: 0, matchCount: 0 },
+  const ranking: ReadonlyArray<RankingEntry & { readonly wins: number; readonly losses: number }> = [
+    { player: players.alice, rating: 1230, delta: 30, matchCount: 4, wins: 3, losses: 1 },
+    { player: players.bob, rating: 1115, delta: 15, matchCount: 3, wins: 1, losses: 2 },
+    { player: players.charlie, rating: 980, delta: -20, matchCount: 2, wins: 0, losses: 2 },
+    { player: players.dana, rating: 900, delta: 0, matchCount: 0, wins: 0, losses: 0 },
   ];
 
   const matches: ReadonlyArray<MatchSummary> = [
@@ -149,6 +149,22 @@ describe("StatsPage", () => {
 
     expect(screen.getByText("No players played in this period.")).toBeInTheDocument();
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+  });
+
+  it("shows each player's win-loss balance instead of rating delta", () => {
+    render(<StatsPage />);
+
+    const aliceRow = screen.getByText("Alice").closest("li");
+    expect(aliceRow).not.toBeNull();
+
+    expect(within(aliceRow!).getByText("3")).toHaveClass("text-emerald-600");
+    expect(within(aliceRow!).getByText(":")).toHaveClass("text-black/30");
+
+    const orangeLoss = within(aliceRow!).getAllByText("1").find((element) =>
+      element.classList.contains("text-orange-500"),
+    );
+    expect(orangeLoss).toBeDefined();
+    expect(within(aliceRow!).queryByText("+30.0")).not.toBeInTheDocument();
   });
 });
 

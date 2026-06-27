@@ -54,6 +54,8 @@ export interface RankingEntry {
   readonly rating: number;
   readonly delta: number;
   readonly matchCount: number;
+  readonly wins: number;
+  readonly losses: number;
 }
 
 export interface LeagueData {
@@ -76,7 +78,7 @@ export const useLeagueData = (): LeagueData => {
 
     const ratingState = new Map<
       AllPlayerRow["id"],
-      { rating: number; initial: number; matchCount: number }
+      { rating: number; initial: number; matchCount: number; wins: number; losses: number }
     >();
 
     allPlayers.forEach((player) => {
@@ -84,6 +86,8 @@ export const useLeagueData = (): LeagueData => {
         rating: player.initialRating,
         initial: player.initialRating,
         matchCount: 0,
+        wins: 0,
+        losses: 0,
       });
     });
 
@@ -149,6 +153,11 @@ export const useLeagueData = (): LeagueData => {
 
         state.rating = ratingAfter;
         state.matchCount += 1;
+        if (team === details.winnerTeam) {
+          state.wins += 1;
+        } else {
+          state.losses += 1;
+        }
 
         participantById.set(player.id, {
           player,
@@ -219,7 +228,9 @@ export const useLeagueData = (): LeagueData => {
         const initial = state?.initial ?? player.initialRating;
         const delta = rating - initial;
         const matchCount = state?.matchCount ?? 0;
-        return { player, rating, delta, matchCount };
+        const wins = state?.wins ?? 0;
+        const losses = state?.losses ?? 0;
+        return { player, rating, delta, matchCount, wins, losses };
       })
       .sort((a, b) => b.rating - a.rating || a.player.name.localeCompare(b.player.name));
 

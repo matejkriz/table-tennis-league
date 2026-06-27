@@ -16,17 +16,13 @@ import {
 } from "../utils/reconcileSelection";
 import { shouldRedirectRootToStart } from "../utils/startAccess";
 
-const createInitialSinglesSelection = (
-  _players: ReadonlyArray<{ readonly id: PlayerId }>,
-): MatchRecorderSelection => ({
+const createInitialSinglesSelection = (): MatchRecorderSelection => ({
   mode: "singles",
   playerAId: "",
   playerBId: "",
 });
 
-const createInitialDoublesSelection = (
-  _players: ReadonlyArray<{ readonly id: PlayerId }>,
-): MatchRecorderSelection => ({
+const createInitialDoublesSelection = (): MatchRecorderSelection => ({
   mode: "doubles",
   playerAId: "",
   playerA2Id: "",
@@ -61,16 +57,16 @@ export const MatchPage = () => {
   }, [ranking]);
 
   const [singlesSelection, setSinglesSelection] = useState<MatchRecorderSelection>(
-    () => createInitialSinglesSelection(players),
+    () => createInitialSinglesSelection(),
   );
   const [doublesSelection, setDoublesSelection] = useState<MatchRecorderSelection>(
-    () => createInitialDoublesSelection(players),
+    () => createInitialDoublesSelection(),
   );
 
   useEffect(() => {
     setSinglesSelection((currentSelection) => {
       if (currentSelection.mode !== "singles") {
-        return createInitialSinglesSelection(players);
+        return createInitialSinglesSelection();
       }
 
       const nextSelectionIds = reconcileSelectionIds(players, [
@@ -95,7 +91,7 @@ export const MatchPage = () => {
 
     setDoublesSelection((currentSelection) => {
       if (currentSelection.mode !== "doubles") {
-        return createInitialDoublesSelection(players);
+        return createInitialDoublesSelection();
       }
       const nextSelectionIds = reconcileSelectionIds(players, [
         currentSelection.playerAId,

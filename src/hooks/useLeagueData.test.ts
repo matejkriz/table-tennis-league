@@ -347,6 +347,45 @@ describe("useLeagueData", () => {
     expect(charlieRanking?.matchCount).toBe(1);
   });
 
+  it("should track wins and losses for each player", () => {
+    const matches = [
+      createMockMatch({
+        id: "match1",
+        playerAId: "player1" as PlayerId, // Alice
+        playerBId: "player2" as PlayerId, // Bob
+        winnerId: "player1" as PlayerId,
+        playedAt: "2024-01-02T00:00:00.000Z",
+      }),
+      createMockMatch({
+        id: "match2",
+        playerAId: "player1" as PlayerId, // Alice
+        playerBId: "player3" as PlayerId, // Charlie
+        winnerId: "player3" as PlayerId,
+        playedAt: "2024-01-03T00:00:00.000Z",
+      }),
+    ];
+
+    vi.mocked(useQuery).mockImplementation((query: unknown) => {
+      if (String(query).includes("player")) return mockPlayers;
+      if (String(query).includes("match")) return matches;
+      return [];
+    });
+
+    const { result } = renderHook(() => useLeagueData());
+
+    const aliceRanking = result.current.ranking.find(
+      (r) => r.player.name === "Alice",
+    );
+    const bobRanking = result.current.ranking.find((r) => r.player.name === "Bob");
+    const charlieRanking = result.current.ranking.find(
+      (r) => r.player.name === "Charlie",
+    );
+
+    expect(aliceRanking).toMatchObject({ wins: 1, losses: 1 });
+    expect(bobRanking).toMatchObject({ wins: 0, losses: 1 });
+    expect(charlieRanking).toMatchObject({ wins: 1, losses: 0 });
+  });
+
   it("should create playersById map for quick lookup", () => {
     vi.mocked(useQuery).mockImplementation((query: unknown) => {
       if (String(query).includes("player")) return mockPlayers;

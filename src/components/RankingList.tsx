@@ -40,18 +40,14 @@ export const RankingList = ({
             <p className="font-mono text-lg font-medium text-black">
               {entry.rating.toFixed(1)}
             </p>
-            <p className={`font-mono text-xs ${entry.delta > 0 ? "text-[#F7931A]" : "text-black/50"}`}>
-              {formatDelta(entry.delta)}
+            <p className="font-mono text-xs">
+              <span className="text-emerald-600">{entry.wins}</span>
+              <span className="text-black/30">:</span>
+              <span className="text-orange-500">{entry.losses}</span>
             </p>
           </div>
         </li>
       ))}
     </ol>
   );
-};
-
-const formatDelta = (delta: number): string => {
-  if (Number.isNaN(delta) || delta === 0) return "±0.0";
-  const sign = delta > 0 ? "+" : "";
-  return `${sign}${delta.toFixed(1)}`;
 };
