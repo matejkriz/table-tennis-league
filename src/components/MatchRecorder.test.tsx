@@ -108,10 +108,10 @@ describe("MatchRecorder", () => {
       playersById: new Map(mockPlayers.map((p) => [p.id, p])),
       matches: [],
       ranking: [
-        { player: mockPlayers[1], rating: 1180, delta: -20, matchCount: 5 },
-        { player: mockPlayers[0], rating: 1050, delta: 50, matchCount: 3 },
-        { player: mockPlayers[2], rating: 850, delta: 50, matchCount: 2 },
-        { player: mockPlayers[3], rating: 920, delta: 0, matchCount: 1 },
+        { player: mockPlayers[1], rating: 1180, delta: -20, matchCount: 5, wins: 2, losses: 3 },
+        { player: mockPlayers[0], rating: 1050, delta: 50, matchCount: 3, wins: 3, losses: 0 },
+        { player: mockPlayers[2], rating: 850, delta: 50, matchCount: 2, wins: 2, losses: 0 },
+        { player: mockPlayers[3], rating: 920, delta: 0, matchCount: 1, wins: 0, losses: 1 },
       ],
     } as unknown as ReturnType<typeof useLeagueData>);
     mockInsert.mockClear();
