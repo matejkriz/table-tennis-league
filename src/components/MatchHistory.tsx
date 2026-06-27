@@ -90,7 +90,7 @@ export const MatchHistory = ({ matches, readonly = false }: MatchHistoryProps) =
                     {participant.player.name}
                   </dt>
                   <dd className="mt-1.5 font-mono text-sm text-black">
-                    <span className={participant.delta > 0 ? "text-[#F7931A]" : ""}>
+                    <span className={getDeltaClass(participant.delta)}>
                       {formatDelta(participant.delta)}
                     </span>{" "}
                     → {participant.ratingAfter.toFixed(1)}
@@ -115,4 +115,10 @@ const formatDelta = (delta?: number): string => {
   if (delta == null || Number.isNaN(delta) || delta === 0) return "±0.0";
   const sign = delta > 0 ? "+" : "";
   return `${sign}${delta.toFixed(1)}`;
+};
+
+const getDeltaClass = (delta: number): string => {
+  if (delta > 0) return "text-emerald-600";
+  if (delta < 0) return "text-orange-500";
+  return "";
 };
