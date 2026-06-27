@@ -33,7 +33,7 @@ export const RankingList = ({
               {entry.player.name}
             </p>
             <p className="mt-0.5 text-xs text-black/50">
-              {entry.matchCount} {t("matches")} • {t("Start")} {entry.player.initialRating.toFixed(1)}
+              {entry.matchCount} {t("matches")}
             </p>
           </div>
           <div className="flex-shrink-0 text-right">
