@@ -57,11 +57,13 @@ export const DuelsHistory = ({
     const [firstPlayerId, secondPlayerId] = selectedPlayerIds;
     const firstPlayer = players.find((player) => player.id === firstPlayerId);
     const secondPlayer = players.find((player) => player.id === secondPlayerId);
-    if (!firstPlayer || !secondPlayer || filteredMatches.length === 0) {
+    const singlesMatches = filteredMatches.filter((match) => !match.isDoubles);
+
+    if (!firstPlayer || !secondPlayer || singlesMatches.length === 0) {
       return null;
     }
 
-    return filteredMatches.reduce(
+    return singlesMatches.reduce(
       (balance, match) => {
         const firstPlayerTeam = match.teamAPlayers.some((player) => player.id === firstPlayerId)
           ? "A"

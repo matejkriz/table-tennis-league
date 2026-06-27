@@ -213,7 +213,7 @@ describe("DuelsHistory", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the head-to-head balance before two selected singles players' duels", () => {
+  it("shows the singles-only head-to-head balance before two selected singles players' duels", () => {
     render(
       <DuelsHistory
         players={players}
@@ -230,8 +230,8 @@ describe("DuelsHistory", () => {
     expect(balance).toHaveTextContent("Head to head");
     expect(balance).toHaveTextContent("Alice");
     expect(balance).toHaveTextContent("Bob");
-    expect(balance).toHaveTextContent("2:0");
-    expect(within(balance).getByText("2")).toHaveClass("text-emerald-600");
+    expect(balance).toHaveTextContent("1:0");
+    expect(within(balance).getByText("1")).toHaveClass("text-emerald-600");
     expect(within(balance).getByText("0")).toHaveClass("text-orange-500");
   });
 
