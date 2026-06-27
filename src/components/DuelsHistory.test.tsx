@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { MatchRecorderSelection } from "./MatchRecorder";
@@ -149,10 +149,13 @@ const matches: ReadonlyArray<MatchSummary> = [
   }),
 ];
 
+const players = [alice, bob, charlie, dana];
+
 describe("DuelsHistory", () => {
   it("shows a prompt when no singles players are selected", () => {
     render(
       <DuelsHistory
+        players={players}
         matches={matches}
         activeSelection={{ mode: "singles", playerAId: "", playerBId: "" }}
       />,
@@ -166,6 +169,7 @@ describe("DuelsHistory", () => {
   it("shows all matches for one selected singles player", () => {
     render(
       <DuelsHistory
+        players={players}
         matches={matches}
         activeSelection={{
           mode: "singles",
@@ -190,6 +194,7 @@ describe("DuelsHistory", () => {
   it("shows only opposite-side head-to-head matches for two selected singles players", () => {
     render(
       <DuelsHistory
+        players={players}
         matches={matches}
         activeSelection={{
           mode: "singles",
@@ -208,9 +213,32 @@ describe("DuelsHistory", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows the head-to-head balance before two selected singles players' duels", () => {
+    render(
+      <DuelsHistory
+        players={players}
+        matches={matches}
+        activeSelection={{
+          mode: "singles",
+          playerAId: alice.id,
+          playerBId: bob.id,
+        }}
+      />,
+    );
+
+    const balance = screen.getByLabelText("Head to head");
+    expect(balance).toHaveTextContent("Head to head");
+    expect(balance).toHaveTextContent("Alice");
+    expect(balance).toHaveTextContent("Bob");
+    expect(balance).toHaveTextContent("2:0");
+    expect(within(balance).getByText("2")).toHaveClass("text-emerald-600");
+    expect(within(balance).getByText("0")).toHaveClass("text-orange-500");
+  });
+
   it("shows matches containing all selected doubles players regardless of pairing", () => {
     render(
       <DuelsHistory
+        players={players}
         matches={matches}
         activeSelection={{
           mode: "doubles",
@@ -237,6 +265,7 @@ describe("DuelsHistory", () => {
   it("shows an empty state when selected players have no matching duels", () => {
     render(
       <DuelsHistory
+        players={players}
         matches={matches}
         activeSelection={
           {

@@ -247,7 +247,11 @@ export const MatchPage = () => {
           title={t("Duels history")}
           defaultOpen={false}
         >
-          <DuelsHistory matches={matches} activeSelection={activeSelection} />
+          <DuelsHistory
+            players={players}
+            matches={matches}
+            activeSelection={activeSelection}
+          />
         </CollapsibleSection>
       </div>
     </div>
