@@ -69,6 +69,10 @@ export const evolu = Evolu.createEvolu(evoluReactWebDeps)(Schema, {
   ),
   encryptionKey: authResult?.owner?.encryptionKey,
   externalAppOwner: authResult?.owner,
+  transports: [
+    { type: "WebSocket", url: "wss://evolu.linky.fit" },
+    { type: "WebSocket", url: "wss://free.evoluhq.com" },
+  ]
 });
 
 // Check for encryption key in URL and restore mnemonic if provided
