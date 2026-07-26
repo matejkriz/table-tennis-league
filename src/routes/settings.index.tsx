@@ -80,6 +80,10 @@ export const SettingsPage = () => {
           <PushNotificationsSection />
         </CollapsibleSection>
       </div>
+
+      <footer className="mt-10 text-center text-xs text-black/40">
+        {t("Version")} {__APP_VERSION__}
+      </footer>
     </div>
   );
 };

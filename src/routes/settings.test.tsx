@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import packageJson from "../../package.json";
+
+vi.stubGlobal("__APP_VERSION__", packageJson.version);
+
 vi.mock("@tanstack/react-router", () => ({
   Outlet: () => <div>Settings child route</div>,
   Link: ({
@@ -71,6 +75,14 @@ describe("SettingsPage", () => {
     render(<SettingsPage />);
 
     expect(screen.queryByText("Add player")).not.toBeInTheDocument();
+  });
+
+  it("shows the package version at the end of the page", () => {
+    render(<SettingsPage />);
+
+    expect(
+      screen.getByText(`Version ${packageJson.version}`),
+    ).toBeInTheDocument();
   });
 
   it("renders nested settings routes through the layout outlet", () => {

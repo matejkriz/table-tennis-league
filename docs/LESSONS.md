@@ -17,3 +17,5 @@
 - When a user specifies alignment for a UI group, apply it to the container layout so the whole group moves together rather than shifting only one child.
 - When color semantics are corrected for a repeated UI concept, update every shared renderer and its tests instead of only the screen where the issue was noticed.
 - Keep singles and doubles balance metrics separate; do not fold team-match results into a two-player head-to-head record unless explicitly requested.
+- For this app, calendar versions use `YY.M.RELEASE` (for example, `26.7.1`);
+  the final segment is the release sequence within the month, not the day.
